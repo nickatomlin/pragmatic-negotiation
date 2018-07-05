@@ -167,3 +167,31 @@ class TfEncoderDecoder(TfRNNClassifier):
 				self.encoder_lengths: x_lengths,
 				self.decoder_lengths: y_lengths}
 
+def simple_example():
+	vocab = ['a', 'b', '$UNK']
+
+	train = [
+		[np.asarray(list('ab')), np.asarray(list('ba'))],
+		[np.asarray(list('aab')), np.asarray(list('bba'))],
+		[np.asarray(list('abb')), np.asarray(list('baa'))],
+		[np.asarray(list('aabb')), np.asarray(list('bbaa'))],
+		[np.asarray(list('ba')), np.asarray(list('ab'))],
+		[np.asarray(list('baa')), np.asarray(list('abb'))],
+		[np.asarray(list('bba')), np.asarray(list('aab'))],
+		[np.asarray(list('bbaa')), np.asarray(list('aabb'))]]
+
+	test = [
+		[np.asarray(list('aaab')), np.asarray(list('bbba'))],
+		[np.asarray(list('baaa')), np.asarray(list('abbb'))]]
+
+	seq2seq = TfEncoderDecoder(
+		vocab=vocab, max_iter=100, max_length=4)
+
+	X, y = zip(*train)
+	seq2seq.fit(X, y)
+
+	X_test, _ = zip(*test)
+	print('\nPredictions:', seq2seq.predict(X_test))
+
+if __name__ == '__main__':
+	simple_example()
