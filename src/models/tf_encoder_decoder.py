@@ -7,7 +7,17 @@ __author__ = 'Nicholas Tomlin'
 
 class TfEncoderDecoder(TfRNNClassifier):
 	'''
-	Input and output vocabulary should be the same for response model.
+	Parameters
+	----------
+	max_input_length : int
+		TODO: Maximum sequence length for the input.
+	max_output_length : int
+		TODO: Maximum sequence length for the output. 
+	vocab : list
+		The full vocabulary. `_convert_X` will convert the data provided
+		to `fit` and `predict` methods into a list of indices into this
+		list of items. For now, assume the input and output have the
+		same vocabulary.
 	'''
 
 	def __init__(self,
@@ -20,9 +30,8 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 
 	def build_graph(self):
-		self._define_embedding()
 		self._init_placeholders()
-		self._init_embedding()
+		self._define_embedding()
 
 		self.encoding_layer()
 		self.decoding_layer()
@@ -54,7 +63,11 @@ class TfEncoderDecoder(TfRNNClassifier):
 			name="decoder_lengths")
 
 
-	def _init_embedding(self):
+	def _define_embedding(self):
+		"""Build the embedding matrix. If the user supplied a matrix, it
+		is converted into a Tensor, else a random Tensor is built. This
+		method sets `self.embedding` for use and returns None.
+		"""
 		self.embedding_encoder = tf.Variable(tf.random_uniform(
 			shape=[self.vocab_size, self.embed_dim],
 			minval=-1.0,
@@ -79,7 +92,8 @@ class TfEncoderDecoder(TfRNNClassifier):
 			cell=encoder_cell,
 			inputs=self.embedded_encoder_inputs,
 			time_major=True,
-			dtype=tf.float32)
+			dtype=tf.float32,
+			scope="encoding_layer")
 
 		self.encoder_final_state = encoder_final_state
 
@@ -88,33 +102,27 @@ class TfEncoderDecoder(TfRNNClassifier):
 		# Build decoder RNN cell:
 		decoder_cell = tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation)
 
-		# Helper:
-		helper = tf.contrib.seq2seq.TrainingHelper(self.embedded_decoder_targets, self.decoder_lengths, time_major=True)
-
-		# Projection layer:
-		projection_layer = tf.layers.Dense(self.vocab_size, use_bias=False)
-		
-		# Decoder:
-		decoder = tf.contrib.seq2seq.BasicDecoder(
-			cell=decoder_cell,
-			helper=helper,
+		# Run the RNN:
+		decoder_outputs, decoder_final_state = tf.nn.dynamic_rnn(
+		    decoder_cell,
+		    self.embedded_decoder_targets,
 			initial_state=self.encoder_final_state,
-			output_layer=projection_layer)
+			time_major=True,
+			dtype=tf.float32,
+			scope="decoding_layer")
 
-		# Dynamic decoding:
-		decoder_outputs, decoder_state, _ = tf.contrib.seq2seq.dynamic_decode(decoder)
-		decoder_logits = decoder_outputs.rnn_output
-		sample_id = decoder_outputs.sample_id
+		decoder_logits = tf.contrib.layers.linear(decoder_outputs, self.vocab_size)
 		
 		self.outputs = decoder_outputs
 		self.model = decoder_logits
 
+
 	def prepare_output_data(self, y):
 		"""
-		Modified to treat y as a sequence.
+		Modified to treat y as a sequence. Avoids one-hot
+		encoding of y in fit(). Use _convert_X() instead.
 		"""
 		return y
-		# return self._convert_X(y)
 
 
 	def get_cost_function(self, **kwargs):
@@ -122,24 +130,30 @@ class TfEncoderDecoder(TfRNNClassifier):
 		input should *not* have a softmax activation
 		applied to it.
 		"""
-		loss_mask = tf.sequence_mask(
-			tf.to_int32(self.decoder_lengths), 
-			tf.reduce_max(self.decoder_lengths),
-			dtype=tf.float32)
-		
-		return tf.contrib.seq2seq.sequence_loss(
-			logits=self.model,
-			targets=self.decoder_targets,
-			weights=loss_mask)
+		return tf.reduce_mean(
+			tf.nn.softmax_cross_entropy_with_logits_v2(
+				logits=self.model,
+				labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32)))
 
 
 	def predict(self, X):
+		"""
+		TODO: test this. Still unsure what the decoder_inputs
+		should look like. Should probably rename _convert_X().
+		"""
 		decoder_prediction = tf.argmax(self.model, 2)
-		predictions = sess.run(
+		decoder_inputs = np.zeros_like(X)
+
+		X, x_lengths = self._convert_X(X)
+		y, y_lengths = self._convert_X(decoder_inputs)
+
+		predictions = self.sess.run(
 			decoder_prediction,
 			feed_dict={
-				encoder_inputs: X,
-				decoder_inputs: din_,
+				self.encoder_inputs: X,
+				self.encoder_lengths: x_lengths,
+				self.decoder_targets: y,
+				self.decoder_lengths: y_lengths
 			})
 
 		return predictions
@@ -152,38 +166,4 @@ class TfEncoderDecoder(TfRNNClassifier):
 				self.decoder_targets: y,
 				self.encoder_lengths: x_lengths,
 				self.decoder_lengths: y_lengths}
-
-	def test_dict(self, X):
-		X, _ = self._convert_X(X)
-		return {self.encoder_inputs: X}
-
-
-def simple_example():
-	vocab = ['a', 'b', '$UNK']
-
-	train = [
-		[np.asarray(list('ab')), np.asarray(list('ba'))],
-		[np.asarray(list('aab')), np.asarray(list('bba'))],
-		[np.asarray(list('abb')), np.asarray(list('baa'))],
-		[np.asarray(list('aabb')), np.asarray(list('bbaa'))],
-		[np.asarray(list('ba')), np.asarray(list('ab'))],
-		[np.asarray(list('baa')), np.asarray(list('abb'))],
-		[np.asarray(list('bba')), np.asarray(list('aab'))],
-		[np.asarray(list('bbaa')), np.asarray(list('aabb'))]]
-
-	test = [
-		[np.asarray(list('aaab')), np.asarray(list('bbba'))],
-		[np.asarray(list('baaa')), np.asarray(list('abbb'))]]
-
-	seq2seq = TfEncoderDecoder(
-		vocab=vocab, max_iter=100, max_length=4)
-
-	X, y = zip(*train)
-	seq2seq.fit(X, y)
-
-	X_test, _ = zip(*test)
-	print('\nPredictions:', seq2seq.predict(X_test))
-
-if __name__ == '__main__':
-	simple_example()
 
