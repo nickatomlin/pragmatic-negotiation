@@ -52,6 +52,11 @@ class TfEncoderDecoder(TfRNNClassifier):
 			dtype=tf.int32,
 			name="encoder_lengths")
 
+		self.decoder_inputs= tf.placeholder(
+			shape=[None, None],
+			dtype=tf.int32,
+			name="decoder_inputs")
+
 		self.decoder_targets = tf.placeholder(
 			shape=[None, None],
 			dtype=tf.int32,
@@ -80,7 +85,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 			minval=-1.0,
 			maxval=1.0,
 			name="embedding_decoder"))
-		self.embedded_decoder_targets = tf.nn.embedding_lookup(self.embedding_decoder, self.decoder_targets)
+		self.embedded_decoder_inputs = tf.nn.embedding_lookup(self.embedding_decoder, self.decoder_inputs)
 
 
 	def encoding_layer(self):
@@ -105,7 +110,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 		# Run the RNN:
 		decoder_outputs, decoder_final_state = tf.nn.dynamic_rnn(
 		    decoder_cell,
-		    self.embedded_decoder_targets,
+		    self.embedded_decoder_inputs,
 			initial_state=self.encoder_final_state,
 			time_major=True,
 			dtype=tf.float32,
@@ -160,12 +165,18 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 
 	def train_dict(self, X, y):
-		X, x_lengths = self._convert_X(X)
-		y, y_lengths = self._convert_X(y)
-		return {self.encoder_inputs: X,
-				self.decoder_targets: y,
-				self.encoder_lengths: x_lengths,
-				self.decoder_lengths: y_lengths}
+		decoder_inputs = [["<eos>"] + list(seq) for seq in y]
+		decoder_targets = [list(seq) + ["<eos>"] for seq in y]
+
+		encoder_inputs, encoder_lengths = self._convert_X(X)
+		decoder_inputs, decoder_lengths = self._convert_X(decoder_inputs)
+		decoder_targets, _ = self._convert_X(decoder_targets)
+
+		return {self.encoder_inputs: encoder_inputs,
+				self.decoder_inputs: decoder_inputs,
+				self.decoder_targets: decoder_targets,
+				self.encoder_lengths: encoder_lengths,
+				self.decoder_lengths: decoder_lengths}
 
 def simple_example():
 	vocab = ['a', 'b', '$UNK']
@@ -181,8 +192,8 @@ def simple_example():
 		[np.asarray(list('bbaa')), np.asarray(list('aabb'))]]
 
 	test = [
-		[np.asarray(list('aaab')), np.asarray(list('bbba'))],
-		[np.asarray(list('baaa')), np.asarray(list('abbb'))]]
+		[np.asarray(list('ab')), np.asarray(list('ba'))],
+		[np.asarray(list('ba')), np.asarray(list('ab'))]]
 
 	seq2seq = TfEncoderDecoder(
 		vocab=vocab, max_iter=100, max_length=4)
