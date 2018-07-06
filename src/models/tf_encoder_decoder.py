@@ -147,7 +147,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 		should look like. Should probably rename _convert_X().
 		"""
 		decoder_prediction = tf.argmax(self.model, 2)
-		decoder_inputs = np.zeros_like(X)
+		decoder_inputs = [["<eos>"] + list(seq) for seq in np.zeros_like(X)]
 
 		X, x_lengths = self._convert_X(X)
 		y, y_lengths = self._convert_X(decoder_inputs)
@@ -157,7 +157,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 			feed_dict={
 				self.encoder_inputs: X,
 				self.encoder_lengths: x_lengths,
-				self.decoder_targets: y,
+				self.decoder_inputs: y,
 				self.decoder_lengths: y_lengths
 			})
 
@@ -179,7 +179,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 				self.decoder_lengths: decoder_lengths}
 
 def simple_example():
-	vocab = ['a', 'b', '$UNK']
+	vocab = ['a', 'b', '$UNK', '<eos>']
 
 	train = [
 		[np.asarray(list('ab')), np.asarray(list('ba'))],
@@ -196,7 +196,7 @@ def simple_example():
 		[np.asarray(list('ba')), np.asarray(list('ab'))]]
 
 	seq2seq = TfEncoderDecoder(
-		vocab=vocab, max_iter=100, max_length=4)
+		vocab=vocab, max_iter=100, max_length=5)
 
 	X, y = zip(*train)
 	seq2seq.fit(X, y)
