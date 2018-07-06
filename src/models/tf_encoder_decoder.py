@@ -33,6 +33,10 @@ class TfEncoderDecoder(TfRNNClassifier):
 		self.eval_graph = tf.Graph()
 		self.infer_graph = tf.Graph()
 
+		self.train_sess = tf.Session(graph=self.train_graph)
+		self.eval_sess = tf.Session(graph=self.eval_graph)
+		self.infer_sess = tf.Session(graph=self.infer_graph)
+
 		super(TfEncoderDecoder, self).__init__(**kwargs)
 
 
@@ -54,9 +58,9 @@ class TfEncoderDecoder(TfRNNClassifier):
 			self.decoding_layer()
 
 		with self.infer_graph.as_default():
-			self._init_placeholders()
-			self._init_embedding()
-			self.encoding_layer()
+			# self._init_placeholders()
+			# self._init_embedding()
+			# self.encoding_layer()
 			self.infer()
 
 
@@ -96,11 +100,11 @@ class TfEncoderDecoder(TfRNNClassifier):
 		is converted into a Tensor, else a random Tensor is built. This
 		method sets `self.embedding` for use and returns None.
 		"""
-		self.embedding = tf.Variable(tf.random_uniform(
-			shape=[self.vocab_size, self.embed_dim],
-			minval=-1.0,
-			maxval=1.0,
-			name="embedding_encoder"))
+		# self.embedding = tf.Variable(tf.random_uniform(
+		# 	shape=[self.vocab_size, self.embed_dim],
+		# 	minval=-1.0,
+		# 	maxval=1.0,
+		# 	name="embedding_encoder"))
 
 		self.embedded_encoder_inputs = tf.nn.embedding_lookup(self.embedding, self.encoder_inputs)
 		self.embedded_decoder_inputs = tf.nn.embedding_lookup(self.embedding, self.decoder_inputs)
@@ -241,7 +245,7 @@ def simple_example():
 		vocab=vocab, max_iter=100, max_length=5)
 
 	X, y = zip(*train)
-	seq2seq.fit(X, y)
+	seq2seq.fit(X, y, graph=seq2seq.train_graph)
 
 	X_test, _ = zip(*test)
 	print('\nPredictions:', seq2seq.predict(X_test))
