@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tf_rnn_classifier import TfRNNClassifier
 import warnings
+import random
 
 __author__ = 'Nicholas Tomlin'
 
@@ -18,6 +19,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 		to `fit` and `predict` methods into a list of indices into this
 		list of items. For now, assume the input and output have the
 		same vocabulary.
+
 	'''
 
 	def __init__(self,
@@ -26,15 +28,36 @@ class TfEncoderDecoder(TfRNNClassifier):
 		**kwargs):
 		self.max_input_length = max_input_length
 		self.max_output_length = max_output_length
+
+		self.train_graph = tf.Graph()
+		self.eval_graph = tf.Graph()
+		self.infer_graph = tf.Graph()
+
 		super(TfEncoderDecoder, self).__init__(**kwargs)
 
 
 	def build_graph(self):
-		self._init_placeholders()
+		"""
+		Parameters
+		----------
+		graph : tf.Graph()
+			"TRAIN" or "INFER", determines if the model is being used to
+			train data or to make inferences.
+			TODO: implement "EVAL" graph.
+		"""
 		self._define_embedding()
 
-		self.encoding_layer()
-		self.decoding_layer()
+		with self.train_graph.as_default():			
+			self._init_placeholders()
+			self._init_embedding()
+			self.encoding_layer()
+			self.decoding_layer()
+
+		with self.infer_graph.as_default():
+			self._init_placeholders()
+			self._init_embedding()
+			self.encoding_layer()
+			self.infer()
 
 
 	def _init_placeholders(self):
@@ -68,24 +91,19 @@ class TfEncoderDecoder(TfRNNClassifier):
 			name="decoder_lengths")
 
 
-	def _define_embedding(self):
+	def _init_embedding(self):
 		"""Build the embedding matrix. If the user supplied a matrix, it
 		is converted into a Tensor, else a random Tensor is built. This
 		method sets `self.embedding` for use and returns None.
 		"""
-		self.embedding_encoder = tf.Variable(tf.random_uniform(
+		self.embedding = tf.Variable(tf.random_uniform(
 			shape=[self.vocab_size, self.embed_dim],
 			minval=-1.0,
 			maxval=1.0,
 			name="embedding_encoder"))
-		self.embedded_encoder_inputs = tf.nn.embedding_lookup(self.embedding_encoder, self.encoder_inputs)
 
-		self.embedding_decoder = tf.Variable(tf.random_uniform(
-			shape=[self.vocab_size, self.embed_dim],
-			minval=-1.0,
-			maxval=1.0,
-			name="embedding_decoder"))
-		self.embedded_decoder_inputs = tf.nn.embedding_lookup(self.embedding_decoder, self.decoder_inputs)
+		self.embedded_encoder_inputs = tf.nn.embedding_lookup(self.embedding, self.encoder_inputs)
+		self.embedded_decoder_inputs = tf.nn.embedding_lookup(self.embedding, self.decoder_inputs)
 
 
 	def encoding_layer(self):
@@ -109,8 +127,8 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 		# Run the RNN:
 		decoder_outputs, decoder_final_state = tf.nn.dynamic_rnn(
-		    decoder_cell,
-		    self.embedded_decoder_inputs,
+			decoder_cell,
+			self.embedded_decoder_inputs,
 			initial_state=self.encoder_final_state,
 			time_major=True,
 			dtype=tf.float32,
@@ -120,6 +138,17 @@ class TfEncoderDecoder(TfRNNClassifier):
 		
 		self.outputs = decoder_outputs
 		self.model = decoder_logits
+
+
+	def infer(self):
+		"""
+		Inference with dynamic decoding.
+		"""
+		# helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+#               embedding=self.embedding,
+#               start_tokens=[],
+#               end_token)
+		pass
 
 
 	def prepare_output_data(self, y):
@@ -147,7 +176,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 		should look like. Should probably rename _convert_X().
 		"""
 		decoder_prediction = tf.argmax(self.model, 2)
-		decoder_inputs = [["<eos>"] + list(seq) for seq in np.zeros_like(X)]
+		decoder_inputs = [["<eos>"] + list(seq) for seq in np.ones_like(X)]
 
 		X, x_lengths = self._convert_X(X)
 		y, y_lengths = self._convert_X(decoder_inputs)
@@ -157,8 +186,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 			feed_dict={
 				self.encoder_inputs: X,
 				self.encoder_lengths: x_lengths,
-				self.decoder_inputs: y,
-				self.decoder_lengths: y_lengths
+				self.decoder_inputs: y
 			})
 
 		return predictions
@@ -171,25 +199,39 @@ class TfEncoderDecoder(TfRNNClassifier):
 		encoder_inputs, encoder_lengths = self._convert_X(X)
 		decoder_inputs, decoder_lengths = self._convert_X(decoder_inputs)
 		decoder_targets, _ = self._convert_X(decoder_targets)
-
 		return {self.encoder_inputs: encoder_inputs,
 				self.decoder_inputs: decoder_inputs,
 				self.decoder_targets: decoder_targets,
 				self.encoder_lengths: encoder_lengths,
 				self.decoder_lengths: decoder_lengths}
 
-def simple_example():
-	vocab = ['a', 'b', '$UNK', '<eos>']
 
-	train = [
-		[np.asarray(list('ab')), np.asarray(list('ba'))],
-		[np.asarray(list('aab')), np.asarray(list('bba'))],
-		[np.asarray(list('abb')), np.asarray(list('baa'))],
-		[np.asarray(list('aabb')), np.asarray(list('bbaa'))],
-		[np.asarray(list('ba')), np.asarray(list('ab'))],
-		[np.asarray(list('baa')), np.asarray(list('abb'))],
-		[np.asarray(list('bba')), np.asarray(list('aab'))],
-		[np.asarray(list('bbaa')), np.asarray(list('aabb'))]]
+def simple_example():
+	vocab = ['$UNK', 'a', 'b', '<eos>']
+
+	train = []
+	for i in range(100):
+		input_string = ""
+		output_string = ""
+		length = random.randint(1,5)
+		for char in range(length):
+			if (random.random() > 0.5):
+				input_string += "a"
+				output_string += "b"
+			else:
+				input_string += "b"
+				output_string += "a"
+		train.append([np.asarray(list(input_string)), np.asarray(list(output_string))])
+
+	# train = [
+	# 	[np.asarray(list('ab')), np.asarray(list('ba'))],
+	# 	[np.asarray(list('aab')), np.asarray(list('bba'))],
+	# 	[np.asarray(list('abb')), np.asarray(list('baa'))],
+	# 	[np.asarray(list('aabb')), np.asarray(list('bbaa'))],
+	# 	[np.asarray(list('ba')), np.asarray(list('ab'))],
+	# 	[np.asarray(list('baa')), np.asarray(list('abb'))],
+	# 	[np.asarray(list('bba')), np.asarray(list('aab'))],
+	# 	[np.asarray(list('bbaa')), np.asarray(list('aabb'))]]
 
 	test = [
 		[np.asarray(list('ab')), np.asarray(list('ba'))],
