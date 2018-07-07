@@ -3,7 +3,6 @@ import tensorflow as tf
 from tf_rnn_classifier import TfRNNClassifier
 import warnings
 import random
-
 from tensorflow.python.layers.core import Dense
 
 
@@ -16,7 +15,9 @@ class TfEncoderDecoder(TfRNNClassifier):
 	max_input_length : int
 		TODO: Maximum sequence length for the input.
 	max_output_length : int
-		TODO: Maximum sequence length for the output. 
+		TODO: Maximum sequence length for the output.
+	num_layers : int
+		Number of layers in the RNN. Used for encoder and decoder. 
 	vocab : list
 		The full vocabulary. `_convert_X` will convert the data provided
 		to `fit` and `predict` methods into a list of indices into this
@@ -28,9 +29,11 @@ class TfEncoderDecoder(TfRNNClassifier):
 	def __init__(self,
 		max_input_length=5,
 		max_output_length=5,
+		num_layers=2,
 		**kwargs):
 		self.max_input_length = max_input_length
 		self.max_output_length = max_output_length
+		self.num_layers = num_layers
 
 		super(TfEncoderDecoder, self).__init__(**kwargs)
 
@@ -96,6 +99,8 @@ class TfEncoderDecoder(TfRNNClassifier):
 	def encoding_layer(self):
 		# Build encoder RNN cell:
 		encoder_cell = tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation)
+		# encoder_cell = tf.contrib.rnn.MultiRNNCell(
+		# 	cells=[tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation) for _ in range(self.num_layers)])
 
 		# Run the RNN:
 		encoder_outputs, encoder_final_state = tf.nn.dynamic_rnn(
@@ -120,6 +125,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 	def decoding_training(self):
 		# Build decoder RNN cell:
 		self.decoder_cell = tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation)
+		# self.decoder_cell = tf.nn.rnn_cell.MultiRNNCell()
 
 		# Run the RNN:
 		decoder_outputs, decoder_final_state = tf.nn.dynamic_rnn(
@@ -166,6 +172,7 @@ class TfEncoderDecoder(TfRNNClassifier):
             maximum_iterations=self.max_output_length)[0]
 		
 		self.inference_decoder_output = inference_decoder_output 
+		self.inference_logits = inference_decoder_output.sample_id
 
 
 	def prepare_output_data(self, y):
@@ -192,22 +199,26 @@ class TfEncoderDecoder(TfRNNClassifier):
 		TODO: test this. Still unsure what the decoder_inputs
 		should look like. Should probably rename _convert_X().
 		"""
-		pass
-		# decoder_prediction = tf.argmax(self.model, 2)
-		# decoder_inputs = [["<eos>"] + list(seq) for seq in np.ones_like(X)]
+		# decoder_prediction = tf.argmax(self.inference_logits, 2)
+		# decoder_inputs = [["<GO>"] + list(seq) for seq in np.ones_like(X)]
 
-		# X, x_lengths = self._convert_X(X)
+		X, x_lengths = self._convert_X(X)
 		# y, y_lengths = self._convert_X(decoder_inputs)
-
+		print(X)
 		# predictions = self.sess.run(
 		# 	decoder_prediction,
 		# 	feed_dict={
 		# 		self.encoder_inputs: X,
 		# 		self.encoder_lengths: x_lengths,
-		# 		self.decoder_inputs: y
 		# 	})
 
-		# return predictions
+		sliced_logits = tf.slice(X)
+
+		answer_logits = self.sess.run(self.inference_logits, {self.encoder_inputs: [X]*self.batch_size, 
+                                      self.decoder_lengths: [len(X)]*self.batch_size, 
+                                      self.encoder_lengths: [len(X)]*self.batch_size})[0] 
+
+		return predictions
 
 
 	def train_dict(self, X, y):
@@ -256,7 +267,7 @@ def simple_example():
 		[np.asarray(list('ba')), np.asarray(list('ab'))]]
 
 	seq2seq = TfEncoderDecoder(
-		vocab=vocab, max_iter=100, max_length=5)
+		vocab=vocab, max_iter=100, max_length=5, eta=0.1)
 
 	X, y = zip(*train)
 	seq2seq.fit(X, y)
