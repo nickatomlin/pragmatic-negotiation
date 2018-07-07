@@ -4,6 +4,9 @@ from tf_rnn_classifier import TfRNNClassifier
 import warnings
 import random
 
+from tensorflow.python.layers.core import Dense
+
+
 __author__ = 'Nicholas Tomlin'
 
 class TfEncoderDecoder(TfRNNClassifier):
@@ -116,11 +119,11 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 	def decoding_training(self):
 		# Build decoder RNN cell:
-		decoder_cell = tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation)
+		self.decoder_cell = tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation)
 
 		# Run the RNN:
 		decoder_outputs, decoder_final_state = tf.nn.dynamic_rnn(
-			decoder_cell,
+			self.decoder_cell,
 			self.embedded_decoder_inputs,
 			initial_state=self.encoder_final_state,
 			time_major=True,
@@ -137,11 +140,32 @@ class TfEncoderDecoder(TfRNNClassifier):
 		"""
 		Inference with dynamic decoding.
 		"""
-		# helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-#               embedding=self.embedding,
-#               start_tokens=[],
-#               end_token)
-		pass
+		output_layer = Dense(
+			self.vocab_size,
+			kernel_initializer = tf.truncated_normal_initializer(mean = 0.0, stddev=0.1))
+
+		start_tokens = tf.tile(
+			input=tf.constant([2], dtype=tf.int32), # TODO: don't hardcode start token like this (2)
+			multiples=[self.batch_size],
+			name='start_tokens')
+
+		helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+			  embedding=self.embedding,
+			  start_tokens=start_tokens,
+			  end_token=3) # TODO: don't hardcode end token like this (3)
+
+		inference_decoder = tf.contrib.seq2seq.BasicDecoder(
+			self.decoder_cell,
+			helper,
+			self.encoder_final_state,
+			output_layer)
+
+		inference_decoder_output = tf.contrib.seq2seq.dynamic_decode(
+			inference_decoder,
+            impute_finished=True,
+            maximum_iterations=self.max_output_length)[0]
+		
+		self.inference_decoder_output = inference_decoder_output 
 
 
 	def prepare_output_data(self, y):
@@ -168,26 +192,27 @@ class TfEncoderDecoder(TfRNNClassifier):
 		TODO: test this. Still unsure what the decoder_inputs
 		should look like. Should probably rename _convert_X().
 		"""
-		decoder_prediction = tf.argmax(self.model, 2)
-		decoder_inputs = [["<eos>"] + list(seq) for seq in np.ones_like(X)]
+		pass
+		# decoder_prediction = tf.argmax(self.model, 2)
+		# decoder_inputs = [["<eos>"] + list(seq) for seq in np.ones_like(X)]
 
-		X, x_lengths = self._convert_X(X)
-		y, y_lengths = self._convert_X(decoder_inputs)
+		# X, x_lengths = self._convert_X(X)
+		# y, y_lengths = self._convert_X(decoder_inputs)
 
-		predictions = self.sess.run(
-			decoder_prediction,
-			feed_dict={
-				self.encoder_inputs: X,
-				self.encoder_lengths: x_lengths,
-				self.decoder_inputs: y
-			})
+		# predictions = self.sess.run(
+		# 	decoder_prediction,
+		# 	feed_dict={
+		# 		self.encoder_inputs: X,
+		# 		self.encoder_lengths: x_lengths,
+		# 		self.decoder_inputs: y
+		# 	})
 
-		return predictions
+		# return predictions
 
 
 	def train_dict(self, X, y):
-		decoder_inputs = [["<eos>"] + list(seq) for seq in y]
-		decoder_targets = [list(seq) + ["<eos>"] for seq in y]
+		decoder_inputs = [["<GO>"] + list(seq) for seq in y]
+		decoder_targets = [list(seq) + ["<EOS>"] for seq in y]
 
 		encoder_inputs, encoder_lengths = self._convert_X(X)
 		decoder_inputs, decoder_lengths = self._convert_X(decoder_inputs)
@@ -200,7 +225,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 
 def simple_example():
-	vocab = ['$UNK', 'a', 'b', '<eos>']
+	vocab = ['<PAD>', '$UNK', '<GO>', '<EOS>', 'a', 'b']
 
 	train = []
 	for i in range(100):
