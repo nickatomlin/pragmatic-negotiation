@@ -29,39 +29,19 @@ class TfEncoderDecoder(TfRNNClassifier):
 		self.max_input_length = max_input_length
 		self.max_output_length = max_output_length
 
-		self.train_graph = tf.Graph()
-		self.eval_graph = tf.Graph()
-		self.infer_graph = tf.Graph()
-
-		self.train_sess = tf.Session(graph=self.train_graph)
-		self.eval_sess = tf.Session(graph=self.eval_graph)
-		self.infer_sess = tf.Session(graph=self.infer_graph)
-
 		super(TfEncoderDecoder, self).__init__(**kwargs)
 
 
 	def build_graph(self):
 		"""
-		Parameters
-		----------
-		graph : tf.Graph()
-			"TRAIN" or "INFER", determines if the model is being used to
-			train data or to make inferences.
-			TODO: implement "EVAL" graph.
+		Builds a single graph for training and inference.
 		"""
 		self._define_embedding()
-
-		with self.train_graph.as_default():			
-			self._init_placeholders()
-			self._init_embedding()
-			self.encoding_layer()
-			self.decoding_layer()
-
-		with self.infer_graph.as_default():
-			# self._init_placeholders()
-			# self._init_embedding()
-			# self.encoding_layer()
-			self.infer()
+		
+		self._init_placeholders()
+		self._init_embedding()
+		self.encoding_layer()
+		self.decoding_layer()
 
 
 	def _init_placeholders(self):
@@ -126,6 +106,15 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 
 	def decoding_layer(self):
+		"""
+		Two separate decoders for training and inference (prediction): inference reuses
+		weighs from training during predict().
+		"""
+		self.decoding_training()
+		self.decoding_inference()
+
+
+	def decoding_training(self):
 		# Build decoder RNN cell:
 		decoder_cell = tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation)
 
@@ -140,11 +129,11 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 		decoder_logits = tf.contrib.layers.linear(decoder_outputs, self.vocab_size)
 		
-		self.outputs = decoder_outputs
-		self.model = decoder_logits
+		self.training_outputs = decoder_outputs
+		self.training_logits = decoder_logits
 
 
-	def infer(self):
+	def decoding_inference(self):
 		"""
 		Inference with dynamic decoding.
 		"""
@@ -170,7 +159,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 		"""
 		return tf.reduce_mean(
 			tf.nn.softmax_cross_entropy_with_logits_v2(
-				logits=self.model,
+				logits=self.training_logits,
 				labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32)))
 
 
@@ -245,7 +234,7 @@ def simple_example():
 		vocab=vocab, max_iter=100, max_length=5)
 
 	X, y = zip(*train)
-	seq2seq.fit(X, y, graph=seq2seq.train_graph)
+	seq2seq.fit(X, y)
 
 	X_test, _ = zip(*test)
 	print('\nPredictions:', seq2seq.predict(X_test))

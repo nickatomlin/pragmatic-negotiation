@@ -74,7 +74,7 @@ class TfModelBase(object):
 		"""
 		raise NotImplementedError
 
-	def fit(self, X, y, graph=None, **kwargs):
+	def fit(self, X, y, **kwargs):
 		"""Standard `fit` method.
 
 		Parameters
@@ -106,7 +106,7 @@ class TfModelBase(object):
 
 		# Start the session:
 		tf.reset_default_graph()
-		self.sess = tf.InteractiveSession(graph=graph)
+		self.sess = tf.InteractiveSession()
 
 		# Build the computation graph. This method is instantiated by
 		# individual subclasses. It defines the model.
