@@ -245,6 +245,10 @@ class TfEncoderDecoder(TfRNNClassifier):
 				self.encoder_lengths: encoder_lengths,
 				self.decoder_lengths: decoder_lengths}
 
+	def get_optimizer(self):
+		# Adagrad optimizer:
+		return tf.train.AdagradOptimizer(self.eta).minimize(self.cost)
+
 
 def simple_example():
 	vocab = ['<PAD>', '$UNK', '<START>', '<END>', 'a', 'b']
@@ -263,10 +267,11 @@ def simple_example():
 				output_string += "a"
 			train.append([np.asarray(list(input_string)), np.asarray(list(output_string))])
 
+	# Add more general examples:
 	test = [[np.asarray(list('abb')), np.asarray(list('baa'))]]
 
 	seq2seq = TfEncoderDecoder(
-		vocab=vocab, max_iter=3000, max_length=6, eta=0.1)
+		vocab=vocab, max_iter=500, max_length=6, eta=0.1)
 
 	X, y = zip(*train)
 	seq2seq.fit(X, y)
