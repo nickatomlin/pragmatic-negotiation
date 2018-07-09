@@ -9,28 +9,22 @@ from tensorflow.python.layers.core import Dense
 __author__ = 'Nicholas Tomlin'
 
 class TfEncoderDecoder(TfRNNClassifier):
-	'''
+	"""
 	Parameters
 	----------
 	max_input_length : int
-		TODO: Maximum sequence length for the input.
+		Maximum sequence length for the input.
 	max_output_length : int
-		TODO: Maximum sequence length for the output.
+		Maximum sequence length for the output.
 	num_layers : int
 		Number of layers in the RNN. Used for encoder and decoder. 
 	vocab : list
-		The full vocabulary. `_convert_X` will convert the data provided
+		The full vocabulary. `prepare_data()` will convert the data provided
 		to `fit` and `predict` methods into a list of indices into this
 		list of items. For now, assume the input and output have the
 		same vocabulary.
-
-	'''
-
-	def __init__(self,
-		max_input_length=5,
-		max_output_length=5,
-		num_layers=2,
-		**kwargs):
+	"""
+	def __init__(self, max_input_length=5, max_output_length=6, num_layers=2, **kwargs):
 		self.max_input_length = max_input_length
 		self.max_output_length = max_output_length
 		self.num_layers = num_layers
@@ -42,10 +36,8 @@ class TfEncoderDecoder(TfRNNClassifier):
 		"""
 		Builds a single graph for training and inference.
 		"""
-		self._define_embedding()
-		
 		self._init_placeholders()
-		self._init_embedding()
+		self._define_embedding()
 		self.encoding_layer()
 		self.decoding_layer()
 
@@ -81,153 +73,172 @@ class TfEncoderDecoder(TfRNNClassifier):
 			name="decoder_lengths")
 
 
-	def _init_embedding(self):
-		"""Build the embedding matrix. If the user supplied a matrix, it
-		is converted into a Tensor, else a random Tensor is built. This
-		method sets `self.embedding` for use and returns None.
+	def _define_embedding(self):
 		"""
-		# self.embedding = tf.Variable(tf.random_uniform(
-		# 	shape=[self.vocab_size, self.embed_dim],
-		# 	minval=-1.0,
-		# 	maxval=1.0,
-		# 	name="embedding_encoder"))
+		Builds the embedding space, and returns embeddings for both the 
+		encoder and the decoder inputs.
+		"""
+		self.embedded_encoder_inputs = tf.contrib.layers.embed_sequence(
+			ids=self.encoder_inputs,
+			vocab_size=self.vocab_size,
+			embed_dim=self.embed_dim)
 
-		self.embedded_encoder_inputs = tf.nn.embedding_lookup(self.embedding, self.encoder_inputs)
-		self.embedded_decoder_inputs = tf.nn.embedding_lookup(self.embedding, self.decoder_inputs)
-
+		self.decoder_embedding_space = tf.Variable(tf.random_uniform([self.vocab_size, self.embed_dim]))
+		self.embedded_decoder_inputs = tf.nn.embedding_lookup(
+			self.decoder_embedding_space,
+			self.decoder_inputs)
 
 	def encoding_layer(self):
-		# Build encoder RNN cell:
-		encoder_cell = tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation)
-		# encoder_cell = tf.contrib.rnn.MultiRNNCell(
-		# 	cells=[tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation) for _ in range(self.num_layers)])
-
+		# Build RNN with depth num_layers:
+		encoder_cell = tf.contrib.rnn.MultiRNNCell([
+			tf.nn.rnn_cell.LSTMCell(
+				self.hidden_dim, 
+				initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))
+			for _ in range(self.num_layers)])
+		
 		# Run the RNN:
 		encoder_outputs, encoder_final_state = tf.nn.dynamic_rnn(
 			cell=encoder_cell,
 			inputs=self.embedded_encoder_inputs,
-			time_major=True,
+			sequence_length=self.encoder_lengths,
 			dtype=tf.float32,
 			scope="encoding_layer")
-
+		
 		self.encoder_final_state = encoder_final_state
 
 
 	def decoding_layer(self):
 		"""
-		Two separate decoders for training and inference (prediction): inference reuses
-		weighs from training during predict().
+		Two separate decoders for training and inference (prediction): inference
+		reuses weights from training during predict().
 		"""
 		self.decoding_training()
 		self.decoding_inference()
 
 
 	def decoding_training(self):
-		# Build decoder RNN cell:
-		self.decoder_cell = tf.nn.rnn_cell.LSTMCell(self.hidden_dim, activation=self.hidden_activation)
-		# self.decoder_cell = tf.nn.rnn_cell.MultiRNNCell()
-
-		# Run the RNN:
-		decoder_outputs, decoder_final_state = tf.nn.dynamic_rnn(
-			self.decoder_cell,
-			self.embedded_decoder_inputs,
-			initial_state=self.encoder_final_state,
-			time_major=True,
-			dtype=tf.float32,
-			scope="decoding_layer")
-
-		decoder_logits = tf.contrib.layers.linear(decoder_outputs, self.vocab_size)
+		# Build RNN with depth num_layers:
+		self.decoder_cell = tf.contrib.rnn.MultiRNNCell([
+			tf.nn.rnn_cell.LSTMCell(
+			self.hidden_dim, 
+			initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2)) for _ in range(self.num_layers)])
 		
-		self.training_outputs = decoder_outputs
-		self.training_logits = decoder_logits
+		# Add a dense layer (see imports):
+		# (Output indexes self.vocab)
+		self.output_layer = Dense(
+			units=self.vocab_size,
+			kernel_initializer=tf.truncated_normal_initializer(mean = 0.0, stddev=0.1))
+		
+		# Helper for sampling:
+		training_helper = tf.contrib.seq2seq.TrainingHelper(
+			inputs=self.embedded_decoder_inputs,
+			sequence_length=self.decoder_lengths,
+			time_major=False)
+		
+		# Dynamic decoding:
+		training_decoder = tf.contrib.seq2seq.BasicDecoder(
+			cell=self.decoder_cell,
+			helper=training_helper,
+			initial_state=self.encoder_final_state,
+			output_layer=self.output_layer)
+		
+		training_outputs = tf.contrib.seq2seq.dynamic_decode(
+			decoder=training_decoder,
+			impute_finished=True,
+			maximum_iterations=self.max_output_length)[0]
+		
+		self.training_logits = training_outputs.rnn_output
 
 
 	def decoding_inference(self):
-		"""
-		Inference with dynamic decoding.
-		"""
-		output_layer = Dense(
-			self.vocab_size,
-			kernel_initializer = tf.truncated_normal_initializer(mean = 0.0, stddev=0.1))
-
 		start_tokens = tf.tile(
 			input=tf.constant([2], dtype=tf.int32), # TODO: don't hardcode start token like this (2)
-			multiples=[self.batch_size],
-			name='start_tokens')
+			multiples=[self.batch_size])
 
-		helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-			  embedding=self.embedding,
-			  start_tokens=start_tokens,
-			  end_token=3) # TODO: don't hardcode end token like this (3)
+		inference_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+			embedding=self.decoder_embedding_space,
+			start_tokens=start_tokens,
+			end_token=3) # TODO: don't hardcode end token like this (3)
 
 		inference_decoder = tf.contrib.seq2seq.BasicDecoder(
-			self.decoder_cell,
-			helper,
-			self.encoder_final_state,
-			output_layer)
+			cell=self.decoder_cell,
+			helper=inference_helper,
+			initial_state=self.encoder_final_state,
+			output_layer=self.output_layer)
 
 		inference_decoder_output = tf.contrib.seq2seq.dynamic_decode(
 			inference_decoder,
-            impute_finished=True,
-            maximum_iterations=self.max_output_length)[0]
-		
-		self.inference_decoder_output = inference_decoder_output 
+			impute_finished=True,
+			maximum_iterations=self.max_output_length)[0]
+
 		self.inference_logits = inference_decoder_output.sample_id
 
 
 	def prepare_output_data(self, y):
 		"""
 		Modified to treat y as a sequence. Avoids one-hot
-		encoding of y in fit(). Use _convert_X() instead.
+		encoding of y in fit(). Use prepare_data() instead.
 		"""
 		return y
 
 
-	def get_cost_function(self, **kwargs):
-		"""Uses `softmax_cross_entropy_with_logits` so the
-		input should *not* have a softmax activation
-		applied to it.
+	def prepare_data(self, X, max_length):
 		"""
-		return tf.reduce_mean(
-			tf.nn.softmax_cross_entropy_with_logits_v2(
-				logits=self.training_logits,
-				labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32)))
+		Modification of _convert_X that takes max_length as a parameter.
+		This is useful because inputs and outputs may have different
+		max_lengths in the encoder-decoder model.
+		"""
+		new_X = np.zeros((len(X), max_length), dtype='int')
+		ex_lengths = []
+		index = dict(zip(self.vocab, range(len(self.vocab))))
+		unk_index = index['$UNK']
+		for i in range(new_X.shape[0]):
+			ex_len = min([len(X[i]), max_length])
+			ex_lengths.append(ex_len)
+			vals = X[i][-self.max_length: ]
+			vals = [index.get(w, unk_index) for w in vals]
+			temp = np.zeros((max_length,), dtype='int')
+			temp[0: len(vals)] = vals
+			new_X[i] = temp
+		return new_X, ex_lengths
+
+
+	def get_cost_function(self, **kwargs):
+		# With built-in Tensorflow seq2seq loss:
+		masks = tf.sequence_mask(self.decoder_lengths, self.max_output_length, dtype=tf.float32, name='masks')
+		cost = tf.contrib.seq2seq.sequence_loss(
+			logits=self.training_logits,
+			targets=self.decoder_targets,
+			weights=masks)
+		return cost
 
 
 	def predict(self, X):
 		"""
-		TODO: test this. Still unsure what the decoder_inputs
-		should look like. Should probably rename _convert_X().
+		TODO: clean this up, and test batch prediction. Currently working with
+		only a single test example. 
 		"""
-		# decoder_prediction = tf.argmax(self.inference_logits, 2)
-		# decoder_inputs = [["<GO>"] + list(seq) for seq in np.ones_like(X)]
+		X, x_lengths = self.prepare_data(X, self.max_input_length)
+		length = X.shape[1]
 
-		X, x_lengths = self._convert_X(X)
-		# y, y_lengths = self._convert_X(decoder_inputs)
-		print(X)
-		# predictions = self.sess.run(
-		# 	decoder_prediction,
-		# 	feed_dict={
-		# 		self.encoder_inputs: X,
-		# 		self.encoder_lengths: x_lengths,
-		# 	})
+		# Resize X and x_lengths to match the size of inference_logits:
+		X = np.tile(X, (self.batch_size, 1))
+		x_lengths = np.tile(x_lengths, (self.batch_size))
 
-		sliced_logits = tf.slice(X)
-
-		answer_logits = self.sess.run(self.inference_logits, {self.encoder_inputs: [X]*self.batch_size, 
-                                      self.decoder_lengths: [len(X)]*self.batch_size, 
-                                      self.encoder_lengths: [len(X)]*self.batch_size})[0] 
-
-		return predictions
+		answer_logits = self.sess.run(self.inference_logits, {self.encoder_inputs: X, 
+									  self.decoder_lengths: x_lengths, 
+									  self.encoder_lengths: x_lengths})[0]
+		return answer_logits
 
 
 	def train_dict(self, X, y):
 		decoder_inputs = [["<GO>"] + list(seq) for seq in y]
 		decoder_targets = [list(seq) + ["<EOS>"] for seq in y]
 
-		encoder_inputs, encoder_lengths = self._convert_X(X)
-		decoder_inputs, decoder_lengths = self._convert_X(decoder_inputs)
-		decoder_targets, _ = self._convert_X(decoder_targets)
+		encoder_inputs, encoder_lengths = self.prepare_data(X, self.max_input_length)
+		decoder_inputs, _ = self.prepare_data(decoder_inputs, self.max_output_length)
+		decoder_targets, decoder_lengths = self.prepare_data(decoder_targets, self.max_output_length)
+
 		return {self.encoder_inputs: encoder_inputs,
 				self.decoder_inputs: decoder_inputs,
 				self.decoder_targets: decoder_targets,
@@ -250,24 +261,12 @@ def simple_example():
 			else:
 				input_string += "b"
 				output_string += "a"
-		train.append([np.asarray(list(input_string)), np.asarray(list(output_string))])
+			train.append([np.asarray(list(input_string)), np.asarray(list(output_string))])
 
-	# train = [
-	# 	[np.asarray(list('ab')), np.asarray(list('ba'))],
-	# 	[np.asarray(list('aab')), np.asarray(list('bba'))],
-	# 	[np.asarray(list('abb')), np.asarray(list('baa'))],
-	# 	[np.asarray(list('aabb')), np.asarray(list('bbaa'))],
-	# 	[np.asarray(list('ba')), np.asarray(list('ab'))],
-	# 	[np.asarray(list('baa')), np.asarray(list('abb'))],
-	# 	[np.asarray(list('bba')), np.asarray(list('aab'))],
-	# 	[np.asarray(list('bbaa')), np.asarray(list('aabb'))]]
-
-	test = [
-		[np.asarray(list('ab')), np.asarray(list('ba'))],
-		[np.asarray(list('ba')), np.asarray(list('ab'))]]
+	test = [[np.asarray(list('abb')), np.asarray(list('baa'))]]
 
 	seq2seq = TfEncoderDecoder(
-		vocab=vocab, max_iter=100, max_length=5, eta=0.1)
+		vocab=vocab, max_iter=3000, max_length=6, eta=0.1)
 
 	X, y = zip(*train)
 	seq2seq.fit(X, y)
