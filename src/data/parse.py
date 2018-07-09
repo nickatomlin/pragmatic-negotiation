@@ -21,10 +21,10 @@ STOP_TOKENS = ["<eos>", "<selection>"]
 
 class Parser(object):
 	"""
-	Responsible for parsing the raw FB negotiation data. Separates each
-	dialogue instance into two examples (from each perspective).
+	Responsible for parsing the raw FB negotiation data.
 
-	TODO: further separate into smaller examples for response model (?)
+	Training example structure defined in:
+	create_training_examples()
 
 	Parameters
 	----------
@@ -44,8 +44,8 @@ class Parser(object):
 		self.output_directory = output_directory
 		self.unk_threshold = unk_threshold
 
-		get_counts()
-		get_vocab()
+		self.get_counts()
+		self.get_vocab()
 
 	def get_counts(self):
 		"""
@@ -53,7 +53,7 @@ class Parser(object):
 		Used to create a vocabulary list and determine UNKing.
 		"""
 		self.counts = Counter()
-		with open(input_directory + "data.txt") as f:
+		with open(self.input_directory + "data.txt") as f:
 			for line in f:
 				line = line.strip()
 				tokens = line.split(" ")
@@ -84,9 +84,9 @@ class Parser(object):
 		"""
 		split = ["train", "val", "test"]
 		for file in split:
-			input_filename = input_directory + file + ".txt"
-			output_filename = output_directory + file + ".txt"
-			parse_file(input_filename, output_filename)
+			input_filename = self.input_directory + file + ".txt"
+			output_filename = self.output_directory + file + ".txt"
+			self.parse_file(input_filename, output_filename)
 
 
 	def parse_file(self, input_filename, output_filename):
@@ -103,28 +103,24 @@ class Parser(object):
 
 	def create_training_examples(self, line):
 		"""
-		Creates a single training example from a line of raw data.
+		Creates multiple training examples from a single line of raw data.
 		"""
-		print(line)
+		pass
 
 
-def read_lines(filename):
-	lines = []
-	with open(filename, 'r') as f:
-		for line in f:
-			lines.append(line.strip())
-	return lines
+class FBParser(Parser):
+	"""
+	Modifies the base Parser class as described in FB's "Deal or no deal?" paper.
+	For each dialogue, creates two training examples (one from each perspective).
+	"""
+	def create_training_examples(self, line):
+		"""
+		Creates multiple training examples from a single line of raw data.
+		"""
+		return []
 
-def main():
 
-	
-		print(input_filename)
-		lines = read_lines(input_filename)
-		for line in lines:
-			print(line)
-			tokens = line.split(" ")
-			
 
 if __name__ == '__main__':
-	parser = Parser()
+	parser = FBParser()
 	parser.parse()
