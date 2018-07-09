@@ -6,6 +6,8 @@ See also:
 https://github.com/facebookresearch/end-to-end-negotiator/blob/master/src/data.py
 """
 from collections import Counter
+import json
+import re
 
 """
 Special tokens:
@@ -98,27 +100,60 @@ class Parser(object):
 			for line in input_file:
 				training_examples = self.create_training_examples(line)
 				for example in training_examples:
-					output_file.write(example)
+					json.dump(example, output_file)
+					output_file.write('\n')
 
 
 	def create_training_examples(self, line):
 		"""
-		Creates multiple training examples from a single line of raw data.
+		Creates training example(s) from a single line of raw data.
 		"""
 		pass
+
+
+	def get_tag(self, line, tag):
+		"""
+		Return the substring of line contained between <tag></tag> tags.
+		"""
+		regexp = r'(?<=<' + tag + r'>)(.*?)(?=</' + tag + r'>)'
+		return re.search(regexp, line).group(0).strip()
+
+	def get_inputs(self, inputs):
+		"""
+		Given a string of inputs (e.g., as returned from get_tag), return the
+		list representation
+		"""
+		return list(map(int, inputs.split()))
 
 
 class FBParser(Parser):
 	"""
 	Modifies the base Parser class as described in FB's "Deal or no deal?" paper.
 	For each dialogue, creates two training examples (one from each perspective).
+
+	Note: dialogue already broken into two examples in raw data files.
 	"""
 	def create_training_examples(self, line):
 		"""
 		Creates multiple training examples from a single line of raw data.
-		"""
-		
 
+		Returns a string.
+		"""
+		input_list = self.get_inputs(self.get_tag(line, "input"))
+		dialogue_string = self.get_tag(line, "dialogue")
+		output = self.get_tag(line, "output")
+		partner_input = self.get_inputs(self.get_tag(line, "partner_input"))
+
+		return [{'input': input_list,'output': [dialogue_string, output, partner_input]}]
+
+
+class RSAParser(Parser):
+	"""
+	Build separate selection and response models for RSA inference calculations.
+	Should create several training examples from every line of input dialogue.
+	"""
+	def create_training_examples(self, line):
+		pass
 
 
 if __name__ == '__main__':
