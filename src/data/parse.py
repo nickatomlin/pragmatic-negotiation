@@ -117,7 +117,7 @@ class FBParser(Parser):
 		"""
 		Creates multiple training examples from a single line of raw data.
 		"""
-		return []
+		
 
 
 
