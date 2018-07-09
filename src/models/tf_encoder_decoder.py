@@ -232,8 +232,8 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 
 	def train_dict(self, X, y):
-		decoder_inputs = [["<GO>"] + list(seq) for seq in y]
-		decoder_targets = [list(seq) + ["<EOS>"] for seq in y]
+		decoder_inputs = [["<START>"] + list(seq) for seq in y]
+		decoder_targets = [list(seq) + ["<END>"] for seq in y]
 
 		encoder_inputs, encoder_lengths = self.prepare_data(X, self.max_input_length)
 		decoder_inputs, _ = self.prepare_data(decoder_inputs, self.max_output_length)
@@ -247,7 +247,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 
 def simple_example():
-	vocab = ['<PAD>', '$UNK', '<GO>', '<EOS>', 'a', 'b']
+	vocab = ['<PAD>', '$UNK', '<START>', '<END>', 'a', 'b']
 
 	train = []
 	for i in range(100):
