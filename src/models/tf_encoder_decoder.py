@@ -222,10 +222,13 @@ class TfEncoderDecoder(TfRNNClassifier):
 		X, x_lengths = self.prepare_data(X, self.max_input_length)
 		num_examples = X.shape[0]
 		length = X.shape[1]
-		
+
+		print(X)
+
 		# Resize X and x_lengths to match the size of inference_logits:
-		X = np.tile(X, (self.batch_size, 1))
-		x_lengths = np.tile(x_lengths, (self.batch_size))
+		X.resize((self.batch_size, length))
+		x_lengths = np.asarray(x_lengths)
+		x_lengths.resize(self.batch_size)
 
 		answer_logits = self.sess.run(self.inference_logits, {self.encoder_inputs: X, 
 									  self.decoder_lengths: x_lengths, 
@@ -269,8 +272,8 @@ def simple_example():
 				output_string += "a"
 			data.append([np.asarray(list(input_string)), np.asarray(list(output_string))])
 
-	train, test = train_test_split(data, test_size=1)
-	print(test)
+	# Modify test_size to increase the number of test examples:
+	train, test = train_test_split(data, test_size=4)
 
 	seq2seq = TfEncoderDecoder(
 		vocab=vocab, max_iter=1500, eta=0.1)
