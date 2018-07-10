@@ -3,6 +3,7 @@ import tensorflow as tf
 from tf_rnn_classifier import TfRNNClassifier
 import warnings
 import random
+from sklearn.model_selection import train_test_split
 from tensorflow.python.layers.core import Dense
 
 
@@ -24,7 +25,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 		list of items. For now, assume the input and output have the
 		same vocabulary.
 	"""
-	def __init__(self, max_input_length=5, max_output_length=6, num_layers=2, **kwargs):
+	def __init__(self, max_input_length=7, max_output_length=8, num_layers=2, **kwargs):
 		self.max_input_length = max_input_length
 		self.max_output_length = max_output_length
 		self.num_layers = num_layers
@@ -152,13 +153,13 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 	def decoding_inference(self):
 		start_tokens = tf.tile(
-			input=tf.constant([2], dtype=tf.int32), # TODO: don't hardcode start token like this (2)
+			input=tf.constant([self.vocab.index("<START>")], dtype=tf.int32),
 			multiples=[self.batch_size])
 
 		inference_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
 			embedding=self.decoder_embedding_space,
 			start_tokens=start_tokens,
-			end_token=3) # TODO: don't hardcode end token like this (3)
+			end_token=self.vocab.index("<END>"))
 
 		inference_decoder = tf.contrib.seq2seq.BasicDecoder(
 			cell=self.decoder_cell,
@@ -195,7 +196,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 		for i in range(new_X.shape[0]):
 			ex_len = min([len(X[i]), max_length])
 			ex_lengths.append(ex_len)
-			vals = X[i][-self.max_length: ]
+			vals = X[i][-max_length: ]
 			vals = [index.get(w, unk_index) for w in vals]
 			temp = np.zeros((max_length,), dtype='int')
 			temp[0: len(vals)] = vals
@@ -219,15 +220,16 @@ class TfEncoderDecoder(TfRNNClassifier):
 		only a single test example. 
 		"""
 		X, x_lengths = self.prepare_data(X, self.max_input_length)
+		num_examples = X.shape[0]
 		length = X.shape[1]
-
+		
 		# Resize X and x_lengths to match the size of inference_logits:
 		X = np.tile(X, (self.batch_size, 1))
 		x_lengths = np.tile(x_lengths, (self.batch_size))
 
 		answer_logits = self.sess.run(self.inference_logits, {self.encoder_inputs: X, 
 									  self.decoder_lengths: x_lengths, 
-									  self.encoder_lengths: x_lengths})[0]
+									  self.encoder_lengths: x_lengths})[:num_examples]
 		return answer_logits
 
 
@@ -253,11 +255,11 @@ class TfEncoderDecoder(TfRNNClassifier):
 def simple_example():
 	vocab = ['<PAD>', '$UNK', '<START>', '<END>', 'a', 'b']
 
-	train = []
+	data = []
 	for i in range(100):
 		input_string = ""
 		output_string = ""
-		length = random.randint(1,5)
+		length = random.randint(1,7)
 		for char in range(length):
 			if (random.random() > 0.5):
 				input_string += "a"
@@ -265,13 +267,13 @@ def simple_example():
 			else:
 				input_string += "b"
 				output_string += "a"
-			train.append([np.asarray(list(input_string)), np.asarray(list(output_string))])
+			data.append([np.asarray(list(input_string)), np.asarray(list(output_string))])
 
-	# Add more general examples:
-	test = [[np.asarray(list('abb')), np.asarray(list('baa'))]]
+	train, test = train_test_split(data, test_size=1)
+	print(test)
 
 	seq2seq = TfEncoderDecoder(
-		vocab=vocab, max_iter=500, max_length=6, eta=0.1)
+		vocab=vocab, max_iter=1500, eta=0.1)
 
 	X, y = zip(*train)
 	seq2seq.fit(X, y)
