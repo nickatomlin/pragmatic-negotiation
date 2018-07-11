@@ -215,25 +215,26 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 
 	def predict(self, X):
-		"""
-		TODO: clean this up, and test batch prediction. Currently working with
-		only a single test example. 
-		"""
 		X, x_lengths = self.prepare_data(X, self.max_input_length)
 		num_examples = X.shape[0]
 		length = X.shape[1]
-
-		print(X)
 
 		# Resize X and x_lengths to match the size of inference_logits:
 		X.resize((self.batch_size, length))
 		x_lengths = np.asarray(x_lengths)
 		x_lengths.resize(self.batch_size)
 
-		answer_logits = self.sess.run(self.inference_logits, {self.encoder_inputs: X, 
-									  self.decoder_lengths: x_lengths, 
-									  self.encoder_lengths: x_lengths})[:num_examples]
+		answer_logits = self.sess.run(self.inference_logits, {
+			self.encoder_inputs: X, 
+			self.encoder_lengths: x_lengths})[:num_examples]
 		return answer_logits
+
+
+	def output(self, answer_logits):
+		"""
+		TODO: Convert answer_logits to printed output by indexing into vocabulary.
+		"""
+		pass
 
 
 	def train_dict(self, X, y):
