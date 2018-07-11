@@ -12,10 +12,11 @@ sys.path.append('../data/')
 from tf_encoder_decoder import TfEncoderDecoder
 from parse import FBParser
 
-train_iterations = 2500
+train_iterations = 10
 learning_rate = 0.1
 max_input_length = 6 # length of goals list
-max_output_length = 10
+max_output_length = 50
+unk_threshold = 20
 
 results_file = "results/baseline.txt"
 
@@ -57,7 +58,7 @@ class Negotiator(TfEncoderDecoder):
 
 if __name__ == '__main__':
 	# Setup parser:
-	parser = FBParser()
+	parser = FBParser(unk_threshold=unk_threshold)
 	print("Vocab size: {}".format(parser.vocab_size))
 
 	# Load processed data:
@@ -69,13 +70,13 @@ if __name__ == '__main__':
 			train_example = json.loads(line)
 			train_data.append((
 				train_example["input"],
-				train_example["output"][0]))
+				train_example["output"][0].split()))
 
 		for line in test_file:
 			test_example = json.loads(line)
 			test_data.append((
 				test_example["input"],
-				test_example["output"][0]))
+				test_example["output"][0].split()))
 
 	X, y = zip(*train_data)
 	X_test, y_test = zip(*test_data[:20])
@@ -87,7 +88,8 @@ if __name__ == '__main__':
 		f.write('\nTest inputs:\n')
 		f.write(str(test_inputs))
 		f.write('\nTest strings:\n')
-		f.write(str(test_strings))
+		test_strings = [" ".join(seq) + "\n" for seq in test_strings]
+		f.write(str(' '.join(test_strings)))
 
 		seq2seq = Negotiator(
 			vocab=parser.vocab,
@@ -101,4 +103,4 @@ if __name__ == '__main__':
 		logits = seq2seq.predict(X_test)
 
 		f.write('\nPredictions:\n')
-		f.write(str(seq2seq.output(logits, padding=" ")))
+		f.write(str("".join(seq2seq.output(logits, padding=" "))))
