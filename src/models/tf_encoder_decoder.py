@@ -37,10 +37,11 @@ class TfEncoderDecoder(TfRNNClassifier):
 		"""
 		Builds a single graph for training and inference.
 		"""
-		self._init_placeholders()
-		self._define_embedding()
-		self.encoding_layer()
-		self.decoding_layer()
+		with tf.device('/device:GPU:0'):
+			self._init_placeholders()
+			self._define_embedding()
+			self.encoding_layer()
+			self.decoding_layer()
 
 
 	def _init_placeholders(self):
@@ -251,6 +252,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 			for token in line:
 				if token != self.vocab.index("<END>"):
 					output_string += self.vocab[token]
+					output_string += padding
 				else:
 					break
 			outputs.append(output_string.strip())

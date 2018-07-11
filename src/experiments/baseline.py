@@ -12,10 +12,12 @@ sys.path.append('../data/')
 from tf_encoder_decoder import TfEncoderDecoder
 from parse import FBParser
 
-train_iterations = 1500
+train_iterations = 2500
 learning_rate = 0.1
 max_input_length = 6 # length of goals list
 max_output_length = 10
+
+results_file = "results/baseline.txt"
 
 # Create a new class that modifies our baselines seq2seq
 # -> Necessary for modifying input data
@@ -37,9 +39,10 @@ class Negotiator(TfEncoderDecoder):
 				self.decoder_lengths: decoder_lengths}
 
 	def predict(self, X):
+		X = np.asarray(list(X))
 		x_lengths = [len(seq) for seq in X] # len(seq) == 6
-		num_examples = X.shape[0]
-		length = X.shape[1]
+		num_examples = len(X)
+		length = 6
 
 		# Resize X and x_lengths to match the size of inference_logits:
 		X.resize((self.batch_size, length))
@@ -75,12 +78,27 @@ if __name__ == '__main__':
 				test_example["output"][0]))
 
 	X, y = zip(*train_data)
+	X_test, y_test = zip(*test_data[:20])
 
-	seq2seq = Negotiator(
-		vocab=parser.vocab,
-		max_iter=1500,
-		eta=0.1,
-		max_input_length=max_input_length,
-		max_output_length=max_output_length)
+	test_inputs = X_test
+	test_strings = [''.join(seq) for seq in y_test]
 
-	seq2seq.fit(X, y)
+	with open(results_file, "w") as f:
+		f.write('\nTest inputs:\n')
+		f.write(str(test_inputs))
+		f.write('\nTest strings:\n')
+		f.write(str(test_strings))
+
+		seq2seq = Negotiator(
+			vocab=parser.vocab,
+			max_iter=train_iterations,
+			eta=learning_rate,
+			max_input_length=max_input_length,
+			max_output_length=max_output_length,
+			hidden_dim=64)
+
+		seq2seq.fit(X, y)
+		logits = seq2seq.predict(X_test)
+
+		f.write('\nPredictions:\n')
+		f.write(str(seq2seq.output(logits, padding=" ")))

@@ -106,7 +106,7 @@ class TfModelBase(object):
 
 		# Start the session:
 		tf.reset_default_graph()
-		self.sess = tf.InteractiveSession()
+		self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
 
 		# Build the computation graph. This method is instantiated by
 		# individual subclasses. It defines the model.
