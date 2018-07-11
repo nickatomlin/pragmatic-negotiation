@@ -74,9 +74,13 @@ if __name__ == '__main__':
 				test_example["input"],
 				test_example["output"][0]))
 
-
+	X, y = zip(*train_data)
 
 	seq2seq = Negotiator(
 		vocab=parser.vocab,
 		max_iter=1500,
-		eta=0.1)
+		eta=0.1,
+		max_input_length=max_input_length,
+		max_output_length=max_output_length)
+
+	seq2seq.fit(X, y)

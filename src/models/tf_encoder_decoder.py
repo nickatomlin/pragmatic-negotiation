@@ -215,6 +215,9 @@ class TfEncoderDecoder(TfRNNClassifier):
 
 
 	def predict(self, X):
+		"""
+		TODO: batch prediction
+		"""
 		X, x_lengths = self.prepare_data(X, self.max_input_length)
 		num_examples = X.shape[0]
 		length = X.shape[1]
@@ -230,11 +233,29 @@ class TfEncoderDecoder(TfRNNClassifier):
 		return answer_logits
 
 
-	def output(self, answer_logits):
+	def output(self, answer_logits, padding=""):
 		"""
-		TODO: Convert answer_logits to printed output by indexing into vocabulary.
+		Convert answer_logits to list of strings by indexing into vocabulary.
+
+		Parameters
+		-----------
+		answer_logits : numpy array
+			Decoder inference logits, returned from predict().
+		padding : string
+			Used to separate tokens in the output. Usually an empty string for 
+			character models, or " " for word models.
 		"""
-		pass
+		outputs = []
+		for line in answer_logits:
+			output_string = ""
+			for token in line:
+				if token != self.vocab.index("<END>"):
+					output_string += self.vocab[token]
+				else:
+					break
+			outputs.append(output_string.strip())
+
+		return outputs
 
 
 	def train_dict(self, X, y):
@@ -283,7 +304,12 @@ def simple_example():
 	seq2seq.fit(X, y)
 
 	X_test, _ = zip(*test)
-	print('\nPredictions:', seq2seq.predict(X_test))
+	logits = seq2seq.predict(X_test)
+
+	test_strings = [''.join(seq) for seq in X_test]
+
+	print('\nTest data:', test_strings)
+	print('Predictions:', seq2seq.output(logits))
 
 if __name__ == '__main__':
 	simple_example()
