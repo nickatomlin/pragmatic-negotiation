@@ -64,7 +64,17 @@ if __name__ == '__main__':
 	with open("../../data/processed/train.txt", "r") as train_file, open("../../data/processed/test.txt", "r") as test_file:
 		for line in train_file:
 			train_example = json.loads(line)
-			# train_data.append()
+			train_data.append((
+				train_example["input"],
+				train_example["output"][0]))
+
+		for line in test_file:
+			test_example = json.loads(line)
+			test_data.append((
+				test_example["input"],
+				test_example["output"][0]))
+
+
 
 	seq2seq = Negotiator(
 		vocab=parser.vocab,

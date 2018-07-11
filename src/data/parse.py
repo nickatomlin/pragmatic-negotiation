@@ -51,11 +51,11 @@ class Parser(object):
 
 	def get_counts(self):
 		"""
-		Get the frequency counts for each word in data.txt.
+		Get the frequency counts for each word in train.txt.
 		Used to create a vocabulary list and determine UNKing.
 		"""
 		self.counts = Counter()
-		with open(self.input_directory + "data.txt") as f:
+		with open(self.input_directory + "train.txt") as f:
 			for line in f:
 				line = line.strip()
 				tokens = line.split(" ")
@@ -68,7 +68,7 @@ class Parser(object):
 		Returns a list of every character which occurs more than
 		self.unk_threshold times
 
-		With unk_threshold of 20, vocab_size is 544.
+		With unk_threshold of 20, vocab_size is 502.
 		"""
 		self.vocab = ["<PAD>", "$UNK", "<START>", "<END>"]
 
