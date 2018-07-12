@@ -12,10 +12,10 @@ sys.path.append('../data/')
 from tf_encoder_decoder import TfEncoderDecoder
 from parse import FBParser
 
-train_iterations = 10
+train_iterations = 2500
 learning_rate = 0.1
 max_input_length = 6 # length of goals list
-max_output_length = 50
+max_output_length = 20
 unk_threshold = 20
 
 results_file = "results/baseline.txt"
@@ -82,14 +82,23 @@ if __name__ == '__main__':
 	X_test, y_test = zip(*test_data[:20])
 
 	test_inputs = X_test
-	test_strings = [''.join(seq) for seq in y_test]
+	test_strings = [' '.join(seq) for seq in y_test]
 
 	with open(results_file, "w") as f:
+		# Save model file:
+		# saver = tf.train.Saver()
+
 		f.write('\nTest inputs:\n')
-		f.write(str(test_inputs))
+		for seq in test_inputs:
+			f.write(str(seq))
+			f.write("\n")
+
 		f.write('\nTest strings:\n')
-		test_strings = [" ".join(seq) + "\n" for seq in test_strings]
-		f.write(str(' '.join(test_strings)))
+		for string in test_strings:
+			f.write(string)
+			f.write("\n")
+		# f.write(str(test_inputs))
+		# f.write(str((test_strings)))
 
 		seq2seq = Negotiator(
 			vocab=parser.vocab,
@@ -100,7 +109,12 @@ if __name__ == '__main__':
 			hidden_dim=64)
 
 		seq2seq.fit(X, y)
-		logits = seq2seq.predict(X_test)
+		# save_path = saver.save(seq2seq.sess, "../../models/seq2seq_baseline.ckpt")
+		# print("Model saved in path: %s" % save_path)
 
+		logits = seq2seq.predict(X_test)
 		f.write('\nPredictions:\n')
-		f.write(str("".join(seq2seq.output(logits, padding=" "))))
+		for string in seq2seq.output(logits, padding=" "):
+			f.write(string)
+			f.write("\n")
+		# f.write(str("".join(seq2seq.output(logits, padding=" "))))
