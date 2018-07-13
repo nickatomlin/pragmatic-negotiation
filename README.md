@@ -14,13 +14,13 @@ Sequence model code based on [Stanford CS224U](https://github.com/cgpotts/cs224u
 ├── data        			
 │   ├── processed
 │   └── raw
-├── models 				# saved Tensorflow models  
+├── models             # saved Tensorflow models  
 ├── notebooks
 ├── reports
 ├── src                           
-│   ├── data    		    # data processing scripts
+│   ├── data           # data processing scripts
 │   ├── experiments
-│   ├── models        	# seq2seq and RNN models
-│   │ 	└── agents  	  # derived model classes for negotiation
+│   └── models         # seq2seq and RNN models
+│     	└── agents     # derived model classes for negotiation
 └── ...
 ```
