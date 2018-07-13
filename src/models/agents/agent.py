@@ -1,6 +1,78 @@
+"""
+Baseline dialogue agent for seq2seq.
+
+Encoder inputs: value state (list of 6 tokens)
+Decoder inputs/targets: list of word indices
+"""
+
+import json
+import numpy as np
+import tensorflow as tf
+
 class Agent(TfEncoderDecoder):
-	# Don't call prepare_data() on X:
+	def fit(self, X, y, **kwargs):
+		"""
+		Key modifications:
+		 - Soft placement of CPU/GPU devices
+		 - Ability to save model
+		"""
+		if isinstance(X, pd.DataFrame):
+			X = X.values
+
+		# Incremental performance:
+		X_dev = kwargs.get('X_dev')
+		if X_dev is not None:
+			dev_iter = kwargs.get('test_iter', 10)
+
+		# One-hot encoding of target `y`, and creation
+		# of a class attribute.
+		y = self.prepare_output_data(y)
+
+		self.input_dim = len(X[0])
+
+		# Start the session:
+		tf.reset_default_graph()
+		self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
+
+		# Build the computation graph. This method is instantiated by
+		# individual subclasses. It defines the model.
+		self.build_graph()
+
+		# Optimizer set-up:
+		self.cost = self.get_cost_function()
+		self.optimizer = self.get_optimizer()
+
+		saver = tf.train.Saver()
+		# Initialize the session variables:
+		self.sess.run(tf.global_variables_initializer())
+
+		# Training, full dataset for each iteration:
+		for i in range(1, self.max_iter+1):
+			loss = 0
+			for X_batch, y_batch in self.batch_iterator(X, y):
+				_, batch_loss = self.sess.run(
+					[self.optimizer, self.cost],
+					feed_dict=self.train_dict(X_batch, y_batch))
+				loss += batch_loss
+			self.errors.append(loss)
+			if X_dev is not None and i > 0 and i % dev_iter == 0:
+				self.dev_predictions.append(self.predict(X_dev))
+			if loss < self.tol:
+				self._progressbar("stopping with loss < self.tol", i)
+				break
+			else:
+				self._progressbar("loss: {}".format(loss), i)
+
+		save_path = saver.save(self.sess, "../../../models/seq2seq_baseline2.ckpt")
+		print("Model saved in path: %s" % save_path)
+		return self
+
+
 	def train_dict(self, X, y):
+		"""
+		Key modifications:
+		 - Don't call prepare_data() on X
+		"""
 		encoder_inputs = X
 		encoder_lengths = [len(seq) for seq in X] # len(seq) == 6
 
@@ -16,6 +88,11 @@ class Agent(TfEncoderDecoder):
 				self.decoder_lengths: decoder_lengths}
 
 	def predict(self, X):
+		"""
+		Key modifications:
+		 - Don't call prepare_data() on X
+		 - Alternate calculation of num_examples, length
+		"""
 		X = np.asarray(list(X))
 		x_lengths = [len(seq) for seq in X] # len(seq) == 6
 		num_examples = len(X)

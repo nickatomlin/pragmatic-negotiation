@@ -106,7 +106,7 @@ class TfModelBase(object):
 
 		# Start the session:
 		tf.reset_default_graph()
-		self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
+		self.sess = tf.InteractiveSession()
 
 		# Build the computation graph. This method is instantiated by
 		# individual subclasses. It defines the model.
@@ -116,8 +116,6 @@ class TfModelBase(object):
 		self.cost = self.get_cost_function()
 		self.optimizer = self.get_optimizer()
 
-
-		saver = tf.train.Saver()
 		# Initialize the session variables:
 		self.sess.run(tf.global_variables_initializer())
 
@@ -138,8 +136,6 @@ class TfModelBase(object):
 			else:
 				self._progressbar("loss: {}".format(loss), i)
 
-		save_path = saver.save(self.sess, "../../models/seq2seq_baseline2.ckpt")
-		print("Model saved in path: %s" % save_path)
 		return self
 
 	def batch_iterator(self, X, y):
