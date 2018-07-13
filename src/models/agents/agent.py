@@ -9,6 +9,10 @@ import json
 import numpy as np
 import tensorflow as tf
 
+import sys
+sys.path.append("..")
+from tf_encoder_decoder import TfEncoderDecoder
+
 class Agent(TfEncoderDecoder):
 	def fit(self, X, y, **kwargs):
 		"""
