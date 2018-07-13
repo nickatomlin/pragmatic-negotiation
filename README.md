@@ -14,7 +14,7 @@ Sequence model code based on [Stanford CS224U](https://github.com/cgpotts/cs224u
 ├── data        			
 │   ├── processed
 │   └── raw
-├── models 				      # saved Tensorflow models  
+├── models 				# saved Tensorflow models  
 ├── notebooks
 ├── reports
 ├── src                           
@@ -22,6 +22,5 @@ Sequence model code based on [Stanford CS224U](https://github.com/cgpotts/cs224u
 │   ├── experiments
 │   ├── models        	# seq2seq and RNN models
 │   │ 	└── agents  	  # derived model classes for negotiation
-│	└──  ...
 └── ...
 ```
