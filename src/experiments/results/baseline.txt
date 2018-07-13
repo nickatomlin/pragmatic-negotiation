@@ -44,23 +44,24 @@ THEM: i'd like the ball and one hat <eos> YOU: i have to have ball . you can hav
 YOU: i'd like the ball and one hat <eos> THEM: i have to have ball . you can have the rest . <eos> YOU: yeah , i need the ball , too . i'll take the ball and you can have the rest <eos> THEM: ball is 9 for me . no deal . <eos> YOU: oh , it's 9 for me , too ! <eos> THEM: haha . i guess we no deal till the button then . lol . <eos> YOU: well , how about i take the hats and the book , you get the ball <eos> THEM: sounds good to me . <eos> YOU: deal thanks <eos> THEM: <selection>
 
 Predictions:
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
-<eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos> <eos>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+YOU: i would like the hat and the ball <eos> THEM: deal <eos> YOU: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+YOU: i would like the hat and the ball <eos> THEM: deal <eos> YOU: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+YOU: i would like the hat and the ball <eos> THEM: deal <eos> YOU: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+YOU: i would like the books and the ball <eos> THEM: deal <eos> YOU: <selection>
+THEM: i would like the books and the ball <eos> YOU: deal <eos> THEM: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+YOU: i would like the hat and the ball <eos> THEM: deal <eos> YOU: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+YOU: i would like the hat and the ball <eos> THEM: deal <eos> YOU: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+YOU: i would like the hat and the ball <eos> THEM: deal <eos> YOU: <selection>
+YOU: i would like the hat and the ball <eos> THEM: deal <eos> YOU: <selection>
+THEM: i would like the hat and the ball <eos> YOU: deal <eos> THEM: <selection>
+ and the ball . <eos> YOU: deal <eos> THEM: <selection>

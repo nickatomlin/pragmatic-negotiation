@@ -18,7 +18,7 @@ max_input_length = 6 # length of goals list
 max_output_length = 20
 unk_threshold = 20
 
-results_file = "results/baseline.txt"
+results_file = "results/baseline2.txt"
 
 # Create a new class that modifies our baselines seq2seq
 # -> Necessary for modifying input data

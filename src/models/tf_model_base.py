@@ -106,7 +106,7 @@ class TfModelBase(object):
 
 		# Start the session:
 		tf.reset_default_graph()
-		self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
+		self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
 
 		# Build the computation graph. This method is instantiated by
 		# individual subclasses. It defines the model.
@@ -138,7 +138,7 @@ class TfModelBase(object):
 			else:
 				self._progressbar("loss: {}".format(loss), i)
 
-		save_path = saver.save(self.sess, "../../models/seq2seq_baseline.ckpt")
+		save_path = saver.save(self.sess, "../../models/seq2seq_baseline2.ckpt")
 		print("Model saved in path: %s" % save_path)
 		return self
 

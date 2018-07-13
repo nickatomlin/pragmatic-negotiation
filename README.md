@@ -7,3 +7,21 @@ for a multi-issue bargaining task. This code uses pragmatic reasoning based on t
 
 Sequence model code based on [Stanford CS224U](https://github.com/cgpotts/cs224u).
 
+## Directory structure
+
+```
+.
+├── data        			
+│   ├── processed
+│   └── raw
+├── models 				# saved Tensorflow models  
+├── notebooks
+├── reports
+├── src                           
+│   ├── data    		# data processing scripts
+│   ├── experiments
+│   ├── models        	# seq2seq and RNN models
+│   │ 	└── agents  	# derived model classes for negotiation
+│	└──  ...
+└── ...
+```

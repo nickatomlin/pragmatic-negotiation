@@ -6,7 +6,6 @@ import random
 from sklearn.model_selection import train_test_split
 from tensorflow.python.layers.core import Dense
 
-
 __author__ = 'Nicholas Tomlin'
 
 class TfEncoderDecoder(TfRNNClassifier):
