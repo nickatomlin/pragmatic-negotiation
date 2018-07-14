@@ -36,11 +36,10 @@ class TfEncoderDecoder(TfRNNClassifier):
 		"""
 		Builds a single graph for training and inference.
 		"""
-		with tf.device('/device:GPU:0'):
-			self._init_placeholders()
-			self._define_embedding()
-			self.encoding_layer()
-			self.decoding_layer()
+		self._init_placeholders()
+		self._define_embedding()
+		self.encoding_layer()
+		self.decoding_layer()
 
 
 	def _init_placeholders(self):

@@ -39,9 +39,9 @@ class Parser(object):
 		Set to 20 in original FB experiments.
 	"""
 	def __init__(self,
-		input_directory="data/raw/",
-		output_directory="data/processed/",
-		unk_threshold=20):
+		unk_threshold=20,
+		input_directory="../../data/raw/",
+		output_directory="../../data/processed/"):
 		self.input_directory = input_directory
 		self.output_directory = output_directory
 		self.unk_threshold = unk_threshold

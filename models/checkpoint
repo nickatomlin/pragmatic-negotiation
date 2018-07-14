@@ -1,2 +1,2 @@
-model_checkpoint_path: "seq2seq_baseline.ckpt"
-all_model_checkpoint_paths: "seq2seq_baseline.ckpt"
+model_checkpoint_path: "seq2seq"
+all_model_checkpoint_paths: "seq2seq"

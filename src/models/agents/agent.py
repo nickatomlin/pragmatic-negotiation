@@ -7,6 +7,7 @@ Decoder inputs/targets: list of word indices
 
 import json
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 import sys
@@ -14,7 +15,7 @@ sys.path.append("..")
 from tf_encoder_decoder import TfEncoderDecoder
 
 class Agent(TfEncoderDecoder):
-	def fit(self, X, y, **kwargs):
+	def fit(self, X, y, save_path="../../../models/seq2seq", **kwargs):
 		"""
 		Key modifications:
 		 - Soft placement of CPU/GPU devices
@@ -42,11 +43,13 @@ class Agent(TfEncoderDecoder):
 		# individual subclasses. It defines the model.
 		self.build_graph()
 
+		# Save the model:
+		saver = tf.train.Saver()
+
 		# Optimizer set-up:
 		self.cost = self.get_cost_function()
 		self.optimizer = self.get_optimizer()
 
-		saver = tf.train.Saver()
 		# Initialize the session variables:
 		self.sess.run(tf.global_variables_initializer())
 
@@ -67,8 +70,8 @@ class Agent(TfEncoderDecoder):
 			else:
 				self._progressbar("loss: {}".format(loss), i)
 
-		save_path = saver.save(self.sess, "../../../models/seq2seq_baseline2.ckpt")
-		print("Model saved in path: %s" % save_path)
+		path = saver.save(self.sess, save_path)
+		print("Model saved in path: %s" % path)
 		return self
 
 
