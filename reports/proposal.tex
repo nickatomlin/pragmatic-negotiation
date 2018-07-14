@@ -1,0 +1,57 @@
+\documentclass{article}
+
+% Package imports:
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[margin=1.5in]{geometry}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{natbib}
+\usepackage{tikz}
+
+% Title info:
+\title{Inferring Latent States with the RSA Model}
+\author{Nicholas Tomlin}
+\date{13 July 2018}
+
+\begin{document}
+	\maketitle
+	
+\section{Background}
+
+The Rational Speech Acts model \citep{frank2012predicting, goodman2013knowledge} provides a computational analogue to Gricean pragmatics in which agents recursively reason about each other's communicative intentions. Traditionally, this involves base speakers and listeners ($S_0$ and $L_0$) who learn literal semantic mappings from utterances $u \in U$ to characteristic world states $w \in W$. Pragmatic agents then use Bayesian reasoning to produce and interpret utterances probabilistically, according to the following proportions:
+\begin{multicols}{2}
+\noindent 
+	\begin{align*}
+		P_{L_0}(w \mid u) &\propto [[u]](w) \cdot P(w) \\
+		P_{S_1}(u \mid w) &\propto \exp(\lambda(\log P_{L_0}(w \mid u) - C(u))) \\
+		P_{L_2}(w \mid u) &\propto P_{S_1}(u \mid w) \cdot P(w)
+	\end{align*}
+	\begin{align*}
+		P_{S_0}(u \mid w) &\propto \exp(\lambda_1(\log ([[u]](w)) - C(u))) \\
+		P_{L_1}(w \mid u) &\propto P_{S_0}(u \mid w) \cdot P(w) \\
+		P_{S_2}(u \mid w) &\propto \exp(\lambda_2(\log P_{L_1}(w \mid u) - C(u)))
+	\end{align*}
+\end{multicols}
+\noindent For a worked example of how this recursive reasoning can produce typical Gricean implicatures, see \citet{monroe2015learning}.
+
+Calculating these inverse probabilities proves difficult at scale, however. The earliest renditions of RSA, such as \citet{smith2013learning}, implement a fixed lexicon so that the truth condition $[[u]](w)$ can be evaluated directly. By constrast, Learned RSA \citep{monroe2015learning} allows optimization of the semantic lexicon through backpropagation, but requires hand-built feature representations of utterances and world states. Most recently, neural RSA \citep{andreas2016reasoning, monroe2017colors, fried2017unified} samples utterances from the base models and makes pragmatic inferences accordingly. This is the method we propose to implement in the experiment described below.
+
+\section{The Negotiation Game}
+
+\citet{lewis2017deal} describe a multi-agent bargaining game in which two agents use dialogue to negotiate in a semi-cooperative environment. Agents, each with their own private goal vectors, must reach an agreement to divvy a shared set of objects; failure to cooperate results in zero reward. After collecting game data through Amazon Mechanical Turk, the original experimenters built dialogue agents capable of negotiating with real human players.
+
+In order to produce goal-oriented dialogue, these agents used \textit{dialogue rollouts} as a planning mechanism. Specifically, agents were trained to simulate full conversations and select utterances with the highest expected reward. We suggest that the proper application of pragmatic reasoning may eliminate the need for such dialogue rollouts.
+
+\section{Reasoning About Latent States}
+
+Since the negotiation game described above is semi-cooperative, we expect the strongest agents may not adhere to the Gricean cooperative principle. For example, it may be in the speaker's best interest to keep their private goal vector hidden, while still conveying information about desired outcomes. Furthermore, these desired outcomes may change over time; \citet{chenbuilding} suggests that the strongest agents behave aggressively at the start of negotiation, and gradually become more agreeable.
+
+% TODO: edit paragraph
+Pragmatic reasoning about the explicit state of the world (i.e., hidden goal vectors) may therefore be non-optimal. After all, the clearly defined ``state" does not provide information about an agent's agreeability, or the exact focus of their utterance. Hence we propose an alternative pragmatic reasoning where agents produce and interpret utterances according to their perceived intent.
+
+
+
+\bibliographystyle{apalike}
+\bibliography{references}
+
+\end{document}
