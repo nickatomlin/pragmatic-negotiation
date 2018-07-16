@@ -172,6 +172,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 			maximum_iterations=self.max_output_length)[0]
 
 		self.inference_logits = inference_decoder_output.sample_id
+		self.inference_logits = tf.identity(self.inference_logits, name="inference_logits")
 
 
 	def prepare_output_data(self, y):

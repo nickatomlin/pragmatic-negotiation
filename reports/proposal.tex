@@ -27,6 +27,7 @@ The Rational Speech Acts model \citep{frank2012predicting, goodman2013knowledge}
 		P_{L_2}(w \mid u) &\propto P_{S_1}(u \mid w) \cdot P(w)
 	\end{align*}
 	\begin{align*}
+		% TODO: remove log(0) in equation
 		P_{S_0}(u \mid w) &\propto \exp(\lambda_1(\log ([[u]](w)) - C(u))) \\
 		P_{L_1}(w \mid u) &\propto P_{S_0}(u \mid w) \cdot P(w) \\
 		P_{S_2}(u \mid w) &\propto \exp(\lambda_2(\log P_{L_1}(w \mid u) - C(u)))
@@ -47,8 +48,7 @@ In order to produce goal-oriented dialogue, these agents used \textit{dialogue r
 Since the negotiation game described above is semi-cooperative, we expect the strongest agents may not adhere to the Gricean cooperative principle. For example, it may be in the speaker's best interest to keep their private goal vector hidden, while still conveying information about desired outcomes. Furthermore, these desired outcomes may change over time; \citet{chenbuilding} suggests that the strongest agents behave aggressively at the start of negotiation, and gradually become more agreeable.
 
 % TODO: edit paragraph
-Pragmatic reasoning about the explicit state of the world (i.e., hidden goal vectors) may therefore be non-optimal. After all, the clearly defined ``state" does not provide information about an agent's agreeability, or the exact focus of their utterance. Hence we propose an alternative pragmatic reasoning where agents produce and interpret utterances according to their perceived intent.
-
+In line with the Rational Speech Acts framework, we propose pragmatic agents who reason recursively about each other's intents and desired outcomes, rather than about the explicit state representation. 
 
 
 \bibliographystyle{apalike}

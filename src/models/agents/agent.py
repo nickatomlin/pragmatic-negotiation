@@ -43,12 +43,12 @@ class Agent(TfEncoderDecoder):
 		# individual subclasses. It defines the model.
 		self.build_graph()
 
-		# Save the model:
-		saver = tf.train.Saver()
-
 		# Optimizer set-up:
 		self.cost = self.get_cost_function()
 		self.optimizer = self.get_optimizer()
+
+		# Save the model:
+		saver = tf.train.Saver()
 
 		# Initialize the session variables:
 		self.sess.run(tf.global_variables_initializer())
