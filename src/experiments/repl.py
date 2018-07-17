@@ -1,3 +1,9 @@
+"""
+Testing:
+ - Model saving/loading
+ - Responding to dialogue
+"""
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -44,7 +50,7 @@ if __name__ == '__main__':
 	            train_example["output"][0].split()))
 
 	X, y = zip(*train_data)
-	agent.fit(X, y, save_path="../../models/seq2seq.ckpt")
+	agent.fit(X, y, save_path="../../models/seq2seq500")
 
 	# Testing:
 	tf.reset_default_graph()
@@ -60,8 +66,8 @@ if __name__ == '__main__':
 	new_agent.build_graph()
 	new_agent.sess.run(tf.global_variables_initializer())
 
-	saver = tf.train.import_meta_graph('../../models/seq2seq.ckpt.meta')
-	saver.restore(new_agent.sess, '../../models/seq2seq.ckpt')
+	saver = tf.train.import_meta_graph('../../models/seq2seq500.meta')
+	saver.restore(new_agent.sess, '../../models/seq2seq500')
 
 	test_data = []
 	with open("../../data/processed/test.txt", "r") as test_file:
