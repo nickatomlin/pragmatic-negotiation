@@ -13,13 +13,13 @@ sys.path.append('../data/')
 from tf_encoder_decoder import TfEncoderDecoder
 from parse import FBParser
 
-train_iterations = 2500
+train_iterations = 500
 learning_rate = 0.1
 max_input_length = 6 # length of goals list
 max_output_length = 20
 unk_threshold = 20
 
-results_file = "results/baseline2.txt"
+results_file = "results/baseline250.txt"
 
 # Create a new class that modifies our baselines seq2seq
 # -> Necessary for modifying input data
