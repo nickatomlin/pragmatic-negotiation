@@ -114,3 +114,7 @@ class Agent(TfEncoderDecoder):
 			self.encoder_inputs: X, 
 			self.encoder_lengths: x_lengths})[:num_examples]
 		return answer_logits
+
+	def load(self):
+		saver = tf.train.import_meta_graph('../models/seq2seq3.meta')
+		saver.restore(self.sess, '../models/seq2seq3')
