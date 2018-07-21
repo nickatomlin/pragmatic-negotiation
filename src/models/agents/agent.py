@@ -83,7 +83,7 @@ class Agent(TfEncoderDecoder):
 		encoder_inputs = X
 		encoder_lengths = [len(seq) for seq in X] # len(seq) == 6
 
-		decoder_inputs = [["<START>"] + list(seq) for seq in y]
+		decoder_inputs = [["<eos>"] + list(seq) for seq in y]
 		decoder_targets = [list(seq) + ["<END>"] for seq in y]
 		decoder_inputs, _ = self.prepare_data(decoder_inputs, self.max_output_length)
 		decoder_targets, decoder_lengths = self.prepare_data(decoder_targets, self.max_output_length)
@@ -114,7 +114,28 @@ class Agent(TfEncoderDecoder):
 			self.encoder_inputs: X, 
 			self.encoder_lengths: x_lengths})[:num_examples]
 		return answer_logits
+		
 
-	def load(self):
-		saver = tf.train.import_meta_graph('../models/seq2seq3.meta')
-		saver.restore(self.sess, '../models/seq2seq3')
+	def decoding_inference(self):
+		start_tokens = tf.tile(
+			input=tf.constant([self.vocab.index("<eos>")], dtype=tf.int32),
+			multiples=[self.batch_size])
+
+		inference_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+			embedding=self.embedding_space,
+			start_tokens=start_tokens,
+			end_token=self.vocab.index("<END>"))
+
+		inference_decoder = tf.contrib.seq2seq.BasicDecoder(
+			cell=self.decoder_cell,
+			helper=inference_helper,
+			initial_state=self.encoder_final_state,
+			output_layer=self.output_layer)
+
+		inference_decoder_output = tf.contrib.seq2seq.dynamic_decode(
+			inference_decoder,
+			impute_finished=True,
+			maximum_iterations=self.max_output_length)[0]
+
+		self.inference_logits = inference_decoder_output.sample_id
+		self.inference_logits = tf.identity(self.inference_logits, name="inference_logits")

@@ -1,2 +1,2 @@
-model_checkpoint_path: "seq2seq3"
-all_model_checkpoint_paths: "seq2seq3"
+model_checkpoint_path: "seq2seq300embed"
+all_model_checkpoint_paths: "seq2seq300embed"

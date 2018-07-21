@@ -19,7 +19,7 @@ sys.path.append('../data/')
 from agent import Agent
 from parse import FBParser
 
-train_iterations = 2500
+train_iterations = 300
 learning_rate = 0.1
 max_input_length = 6 # length of goals list
 max_output_length = 20
@@ -50,37 +50,37 @@ if __name__ == '__main__':
 	            train_example["output"][0].split()))
 
 	X, y = zip(*train_data)
-	agent.fit(X, y, save_path="../../models/seq2seq500")
+	agent.fit(X, y, save_path="../../models/seq2seq300embed")
 
 	# Testing:
-	tf.reset_default_graph()
+	# tf.reset_default_graph()
 
-	new_agent = Agent(vocab=parser.vocab,
-	              max_iter=train_iterations,
-	              eta=learning_rate,
-	              max_input_length=max_input_length,
-	              max_output_length=max_output_length,
-	              hidden_dim=64)
+	# new_agent = Agent(vocab=parser.vocab,
+	#               max_iter=train_iterations,
+	#               eta=learning_rate,
+	#               max_input_length=max_input_length,
+	#               max_output_length=max_output_length,
+	#               hidden_dim=64)
 
-	new_agent.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
-	new_agent.build_graph()
-	new_agent.sess.run(tf.global_variables_initializer())
+	# new_agent.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
+	# new_agent.build_graph()
+	# new_agent.sess.run(tf.global_variables_initializer())
 
-	saver = tf.train.import_meta_graph('../../models/seq2seq500.meta')
-	saver.restore(new_agent.sess, '../../models/seq2seq500')
+	# saver = tf.train.import_meta_graph('../../models/seq2seq500embed.meta')
+	# saver.restore(new_agent.sess, '../../models/seq2seq500embed')
 
-	test_data = []
-	with open("../../data/processed/test.txt", "r") as test_file:
-	    for line in test_file:
-	        test_example = json.loads(line)
-	        test_data.append((
-	            test_example["input"],
-	            test_example["output"][0].split()))
+	# test_data = []
+	# with open("../../data/processed/test.txt", "r") as test_file:
+	#     for line in test_file:
+	#         test_example = json.loads(line)
+	#         test_data.append((
+	#             test_example["input"],
+	#             test_example["output"][0].split()))
 
-	X_test, y_test = zip(*test_data[:20])
-	print(X_test)
-	logits = new_agent.predict(X_test)
-	print('\nPredictions:\n')
-	for string in new_agent.output(logits, padding=" "):
-	    print(string)
-	    print("\n")
+	# X_test, y_test = zip(*test_data[:20])
+	# print(X_test)
+	# logits = new_agent.predict(X_test)
+	# print('\nPredictions:\n')
+	# for string in new_agent.output(logits, padding=" "):
+	#     print(string)
+	#     print("\n")

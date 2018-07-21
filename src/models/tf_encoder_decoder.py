@@ -78,15 +78,19 @@ class TfEncoderDecoder(TfRNNClassifier):
 		Builds the embedding space, and returns embeddings for both the 
 		encoder and the decoder inputs.
 		"""
-		self.embedded_encoder_inputs = tf.contrib.layers.embed_sequence(
-			ids=self.encoder_inputs,
-			vocab_size=self.vocab_size,
-			embed_dim=self.embed_dim)
+		# self.embedded_encoder_inputs = tf.contrib.layers.embed_sequence(
+		# 	ids=self.encoder_inputs,
+		# 	vocab_size=self.vocab_size,
+		# 	embed_dim=self.embed_dim)
 
-		self.decoder_embedding_space = tf.Variable(tf.random_uniform([self.vocab_size, self.embed_dim]))
+		self.embedding_space = tf.Variable(tf.random_uniform([self.vocab_size, self.embed_dim]))
+		
 		self.embedded_decoder_inputs = tf.nn.embedding_lookup(
-			self.decoder_embedding_space,
+			self.embedding_space,
 			self.decoder_inputs)
+		self.embedded_encoder_inputs = tf.nn.embedding_lookup(
+			self.embedding_space,
+			self.encoder_inputs)
 
 	def encoding_layer(self):
 		# Build RNN with depth num_layers:
@@ -156,7 +160,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 			multiples=[self.batch_size])
 
 		inference_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-			embedding=self.decoder_embedding_space,
+			embedding=self.embedding_space,
 			start_tokens=start_tokens,
 			end_token=self.vocab.index("<END>"))
 
