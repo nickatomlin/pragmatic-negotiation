@@ -24,7 +24,7 @@ class TfEncoderDecoder(TfRNNClassifier):
 		list of items. For now, assume the input and output have the
 		same vocabulary.
 	"""
-	def __init__(self, max_input_length=5, max_output_length=6, num_layers=2, **kwargs):
+	def __init__(self, max_input_length=7, max_output_length=8, num_layers=2, **kwargs):
 		self.max_input_length = max_input_length
 		self.max_output_length = max_output_length
 		self.num_layers = num_layers
