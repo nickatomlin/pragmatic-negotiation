@@ -19,24 +19,28 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 	Encoding layer with bidirectional RNNs
 	"""
 	def encoding_layer(self):
-		cells_fw = []
-		cells_bw = []
-		for _ in range(self.num_layers):
 
-
-		# Build RNN with depth num_layers:	
-		encoder_cell = tf.contrib.rnn.MultiRNNCell([
-			tf.nn.rnn_cell.LSTMCell(
+		rnn_inputs = self.embedded_encoder_inputs
+		for i in range(self.num_layers):
+			forward_cell = tf.nn.rnn_cell.LSTMCell(
 				self.hidden_dim, 
-				initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))
-			for _ in range(self.num_layers)])
-		
-		# Run the RNN:
-		encoder_outputs, encoder_final_state = tf.nn.dynamic_rnn(
-			cell=encoder_cell,
-			inputs=self.embedded_encoder_inputs,
-			sequence_length=self.encoder_lengths,
-			dtype=tf.float32,
-			scope="encoding_layer")
-		
-		self.encoder_final_state = encoder_final_state
+				initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2*i)
+			backward_cell = tf.nn.rnn_cell.LSTMCell(
+				self.hidden_dim, 
+				initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=(2*i+1))
+
+			forward_state = forward_cell.zero_state(self.batch_size, tf.float32)
+        	backward_state = backward_cell.zero_state(self.batch_size, tf.float32)
+
+			(forward_output, backward_output) = tf.nn.bidirectional_dynamic_rnn(
+	    		cell_fw=forward_cell,
+	    		cell_bw=backward_cell,
+	    		inputs=rnn_inputs,
+	    		initial_state_fw=forward_state,
+                initial_state_bw=backward_state,
+	    		sequence_length=self.encoder_lengths,
+	    		time_major=True)
+
+			rnn_inputs = tf.concat([forward_output, backward_output], axis=2)
+
+		self.encoder_final_state = rnn_inputs
