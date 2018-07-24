@@ -19,7 +19,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.python.layers.core import Dense
 
 class AdvancedEncoderDecoder(TfEncoderDecoder):
-	def __init__(self, beam_width):
+	def __init__(self, beam_width=4, **kwargs):
 		self.beam_width = beam_width
 		super(AdvancedEncoderDecoder, self).__init__(**kwargs)
 
@@ -36,60 +36,63 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 				self.hidden_dim, 
 				initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=(2*i+1)))
 
-			forward_state = forward_cell.zero_state(self.batch_size, tf.float32)
-			backward_state = backward_cell.zero_state(self.batch_size, tf.float32)
-
-			(forward_output, backward_output) = tf.nn.bidirectional_dynamic_rnn(
+			(forward_output, backward_output), final_state = tf.nn.bidirectional_dynamic_rnn(
 				cell_fw=forward_cell,
 				cell_bw=backward_cell,
 				inputs=rnn_inputs,
-				initial_state_fw=forward_state,
-				initial_state_bw=backward_state,
 				sequence_length=self.encoder_lengths,
-				time_major=True)
+				scope='BLSTM_' + str(i),
+				dtype=tf.float32)
 
 			rnn_inputs = tf.concat([forward_output, backward_output], axis=2)
 
-		self.encoder_final_state = rnn_inputs
-
-
-	def decoding_training(self):
-		# Build RNN with depth num_layers:
-		self.decoder_cell = tf.contrib.rnn.MultiRNNCell([
-			tf.nn.rnn_cell.LSTMCell(
-			self.hidden_dim, 
-			initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2)) for _ in range(self.num_layers)])
-		
-		# Add a dense layer (see imports):
-		# (Output indexes self.vocab)
-		self.output_layer = Dense(
-			units=self.vocab_size,
-			kernel_initializer=tf.truncated_normal_initializer(mean = 0.0, stddev=0.1))
-		
-		# Helper for sampling:
-		training_helper = tf.contrib.seq2seq.TrainingHelper(
-			inputs=self.embedded_decoder_inputs,
-			sequence_length=self.decoder_lengths,
-			time_major=False)
-		
-		# Dynamic decoding:
-		training_decoder = tf.contrib.seq2seq.BasicDecoder(
-			cell=self.decoder_cell,
-			helper=training_helper,
-			initial_state=self.encoder_final_state,
-			output_layer=self.output_layer)
-		
-		training_outputs = tf.contrib.seq2seq.dynamic_decode(
-			decoder=training_decoder,
-			impute_finished=True,
-			maximum_iterations=self.max_output_length)[0]
-		
-		self.training_logits = training_outputs.rnn_output
+		self.encoder_final_state = final_state
 
 
 	"""
-	Decoding inference with beam search
+	Modified to include LuongAttention (source below)
+	
+	Minh-Thang Luong, Hieu Pham, Christopher D. Manning.
+	"Effective Approaches to Attention-based Neural Machine Translation."
+	EMNLP 2015. https://arxiv.org/abs/1508.04025
 	"""
+	# def decoding_training(self):
+	# 	# Build RNN with depth num_layers:
+	# 	self.decoder_cell = tf.contrib.rnn.MultiRNNCell([
+	# 		tf.nn.rnn_cell.LSTMCell(
+	# 		self.hidden_dim, 
+	# 		initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2)) for _ in range(self.num_layers)])
+		
+	# 	# Add a dense layer (see imports):
+	# 	# (Output indexes self.vocab)
+	# 	self.output_layer = Dense(
+	# 		units=self.vocab_size,
+	# 		kernel_initializer=tf.truncated_normal_initializer(mean = 0.0, stddev=0.1))
+		
+	# 	# Helper for sampling:
+	# 	training_helper = tf.contrib.seq2seq.TrainingHelper(
+	# 		inputs=self.embedded_decoder_inputs,
+	# 		sequence_length=self.decoder_lengths,
+	# 		time_major=False)
+		
+	# 	# Dynamic decoding:
+	# 	training_decoder = tf.contrib.seq2seq.BasicDecoder(
+	# 		cell=self.decoder_cell,
+	# 		helper=training_helper,
+	# 		initial_state=self.encoder_final_state,
+	# 		output_layer=self.output_layer)
+		
+	# 	training_outputs = tf.contrib.seq2seq.dynamic_decode(
+	# 		decoder=training_decoder,
+	# 		impute_finished=True,
+	# 		maximum_iterations=self.max_output_length)[0]
+		
+	# 	self.training_logits = training_outputs.rnn_output
+
+
+	# """
+	# Decoding inference with beam search
+	# """
 	def decoding_inference(self):
 		start_tokens = tf.tile(
 			input=tf.constant([self.vocab.index("<START>")], dtype=tf.int32),
@@ -136,7 +139,7 @@ def simple_example():
 	# Modify test_size to increase the number of test examples:
 	train, test = train_test_split(data, test_size=4)
 
-	seq2seq = TfEncoderDecoder(
+	seq2seq = AdvancedEncoderDecoder(
 		vocab=vocab, max_iter=1500, eta=0.1)
 
 	X, y = zip(*train)
