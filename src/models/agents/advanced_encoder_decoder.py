@@ -17,6 +17,8 @@ from tf_encoder_decoder import TfEncoderDecoder
 import random
 from sklearn.model_selection import train_test_split
 from tensorflow.python.layers.core import Dense
+from tensorflow.contrib.rnn import LSTMCell, LSTMStateTuple
+
 
 class AdvancedEncoderDecoder(TfEncoderDecoder):
 	def __init__(self, beam_width=4, **kwargs):
@@ -59,21 +61,44 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 	"""
 	# def decoding_training(self):
 	# 	# attention_states = tf.transpose(self.encoder_outputs, [1, 0, 2])
+	# 	# cells = []
+	# 	# for i in range(self.num_layers):                   
+	# 	#     cell = tf.nn.rnn_cell.LSTMCell(
+	# 	# 		self.hidden_dim, 
+	# 	# 		initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=i),
+	# 	# 		state_is_tuple=True)
+
+	# 	#     cell = tf.contrib.rnn.AttentionCellWrapper(
+	# 	#         cell, attn_length=40, state_is_tuple=True)
+
+	# 	#     cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=0.5)
+	# 	#     cells.append(cell)
+
+	# 	# self.decoder_cell = tf.contrib.rnn.MultiRNNCell(cells, state_is_tuple=True)
+	# 	# decoder_initial_state = self.decoder_cell.zero_state(self.batch_size, tf.float32)
+
 	# 	attention_mechanism = tf.contrib.seq2seq.LuongAttention(
-	# 	    num_units=self.hidden_dim,
-	# 	    memory=self.encoder_outputs,
-	# 	    memory_sequence_length=self.encoder_lengths)
+	# 		num_units=self.hidden_dim,
+	# 		memory=self.encoder_outputs,
+	# 		memory_sequence_length=self.encoder_lengths,
+	# 		dtype=tf.float32)
 
 	# 	# Build RNN with depth num_layers:
-	# 	decoder_cell = tf.contrib.rnn.MultiRNNCell([
+	# 	self.decoder_cell = tf.contrib.rnn.MultiRNNCell([
 	# 		tf.nn.rnn_cell.LSTMCell(
 	# 		self.hidden_dim, 
 	# 		initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2)) for _ in range(self.num_layers)])
 
 	# 	self.decoder_cell = tf.contrib.seq2seq.AttentionWrapper(
-	# 	    cell=decoder_cell,
-	# 	    attention_mechanism=attention_mechanism,
-	# 	    attention_layer_size=self.hidden_dim)
+	# 		cell=self.decoder_cell,
+	# 		attention_mechanism=attention_mechanism,
+	# 		attention_layer_size=self.hidden_dim)
+	# 	decoder_initial_state = self.decoder_cell.zero_state(self.batch_size, tf.float32).clone(cell_state=self.encoder_final_state)
+
+	# 	# self.decoder_cell = tf.contrib.rnn.MultiRNNCell([
+	# 	# 	tf.nn.rnn_cell.LSTMCell(
+	# 	# 	self.hidden_dim, 
+	# 	# 	initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2)) for _ in range(self.num_layers)])
 		
 	# 	# Add a dense layer (see imports):
 	# 	# (Output indexes self.vocab)
@@ -85,10 +110,8 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 	# 	training_helper = tf.contrib.seq2seq.TrainingHelper(
 	# 		inputs=self.embedded_decoder_inputs,
 	# 		sequence_length=self.decoder_lengths,
-	# 		time_major=False)
+	# 		time_major=True)
 		
-	# 	decoder_initial_state = self.decoder_cell.zero_state(self.batch_size, tf.float32).clone(cell_state=self.encoder_final_state)
-
 	# 	# Dynamic decoding:
 	# 	training_decoder = tf.contrib.seq2seq.BasicDecoder(
 	# 		cell=self.decoder_cell,
@@ -113,16 +136,17 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 			multiples=[self.batch_size])
 
 		decoder_initial_state = tf.contrib.seq2seq.tile_batch(self.encoder_final_state, multiplier=self.beam_width)
+		# decoder_initial_state = self.decoder_cell.zero_state(self.batch_size * self.beam_width, tf.float32).clone(cell_state=self.encoder_final_state)
 
 		inference_decoder = tf.contrib.seq2seq.BeamSearchDecoder(
-	        cell=self.decoder_cell,
-	        embedding=self.embedding_space,
-	        start_tokens=start_tokens,
-	        end_token=self.vocab.index("<END>"),
-	        initial_state=decoder_initial_state,
-	        beam_width=self.beam_width,
-	        output_layer=self.output_layer,
-	        length_penalty_weight=0.0)
+			cell=self.decoder_cell,
+			embedding=self.embedding_space,
+			start_tokens=start_tokens,
+			end_token=self.vocab.index("<END>"),
+			initial_state=decoder_initial_state,
+			beam_width=self.beam_width,
+			output_layer=self.output_layer,
+			length_penalty_weight=0.0)
 
 		inference_decoder_output = tf.contrib.seq2seq.dynamic_decode(
 			inference_decoder,

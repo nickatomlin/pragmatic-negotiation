@@ -13,8 +13,9 @@ import tensorflow as tf
 import sys
 sys.path.append("..")
 from tf_encoder_decoder import TfEncoderDecoder
+from advanced_encoder_decoder import AdvancedEncoderDecoder
 
-class Agent(TfEncoderDecoder):
+class Agent(AdvancedEncoderDecoder):
 	def fit(self, X, y, save_path="../../../models/seq2seq", **kwargs):
 		"""
 		Key modifications:
