@@ -46,6 +46,7 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 
 			rnn_inputs = tf.concat([forward_output, backward_output], axis=2)
 
+		self.encoder_outputs = rnn_inputs
 		self.encoder_final_state = final_state
 
 
@@ -57,11 +58,22 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 	EMNLP 2015. https://arxiv.org/abs/1508.04025
 	"""
 	# def decoding_training(self):
+	# 	# attention_states = tf.transpose(self.encoder_outputs, [1, 0, 2])
+	# 	attention_mechanism = tf.contrib.seq2seq.LuongAttention(
+	# 	    num_units=self.hidden_dim,
+	# 	    memory=self.encoder_outputs,
+	# 	    memory_sequence_length=self.encoder_lengths)
+
 	# 	# Build RNN with depth num_layers:
-	# 	self.decoder_cell = tf.contrib.rnn.MultiRNNCell([
+	# 	decoder_cell = tf.contrib.rnn.MultiRNNCell([
 	# 		tf.nn.rnn_cell.LSTMCell(
 	# 		self.hidden_dim, 
 	# 		initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2)) for _ in range(self.num_layers)])
+
+	# 	self.decoder_cell = tf.contrib.seq2seq.AttentionWrapper(
+	# 	    cell=decoder_cell,
+	# 	    attention_mechanism=attention_mechanism,
+	# 	    attention_layer_size=self.hidden_dim)
 		
 	# 	# Add a dense layer (see imports):
 	# 	# (Output indexes self.vocab)
@@ -75,11 +87,13 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 	# 		sequence_length=self.decoder_lengths,
 	# 		time_major=False)
 		
+	# 	decoder_initial_state = self.decoder_cell.zero_state(self.batch_size, tf.float32).clone(cell_state=self.encoder_final_state)
+
 	# 	# Dynamic decoding:
 	# 	training_decoder = tf.contrib.seq2seq.BasicDecoder(
 	# 		cell=self.decoder_cell,
 	# 		helper=training_helper,
-	# 		initial_state=self.encoder_final_state,
+	# 		initial_state=decoder_initial_state,
 	# 		output_layer=self.output_layer)
 		
 	# 	training_outputs = tf.contrib.seq2seq.dynamic_decode(
@@ -98,9 +112,7 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 			input=tf.constant([self.vocab.index("<START>")], dtype=tf.int32),
 			multiples=[self.batch_size])
 
-		decoder_initial_state = tf.contrib.seq2seq.tile_batch(
-    		t=self.encoder_final_state,
-    		multiplier=self.beam_width)
+		decoder_initial_state = tf.contrib.seq2seq.tile_batch(self.encoder_final_state, multiplier=self.beam_width)
 
 		inference_decoder = tf.contrib.seq2seq.BeamSearchDecoder(
 	        cell=self.decoder_cell,
@@ -109,14 +121,15 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 	        end_token=self.vocab.index("<END>"),
 	        initial_state=decoder_initial_state,
 	        beam_width=self.beam_width,
+	        output_layer=self.output_layer,
 	        length_penalty_weight=0.0)
 
 		inference_decoder_output = tf.contrib.seq2seq.dynamic_decode(
 			inference_decoder,
-			impute_finished=True,
+			impute_finished=False,
 			maximum_iterations=self.max_output_length)[0]
 
-		self.inference_logits = inference_decoder_output.sample_id
+		self.inference_logits = inference_decoder_output.predicted_ids[:,:,0]
 
 
 def simple_example():
