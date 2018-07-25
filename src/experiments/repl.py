@@ -50,7 +50,7 @@ if __name__ == '__main__':
 	            train_example["output"][0].split()))
 
 	X, y = zip(*train_data)
-	agent.fit(X, y, save_path="../../models/seq2seqAdvanced300")
+	agent.fit(X, y, save_path="../../models/seq2seqAdvanced300b")
 
 	# Testing:
 	# tf.reset_default_graph()

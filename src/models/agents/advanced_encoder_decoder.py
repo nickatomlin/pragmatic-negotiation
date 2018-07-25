@@ -154,6 +154,7 @@ class AdvancedEncoderDecoder(TfEncoderDecoder):
 			maximum_iterations=self.max_output_length)[0]
 
 		self.inference_logits = inference_decoder_output.predicted_ids[:,:,0]
+		self.inference_logits = tf.identity(self.inference_logits, name="inference_logits")
 
 
 def simple_example():

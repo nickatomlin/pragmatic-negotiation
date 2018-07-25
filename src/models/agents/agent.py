@@ -122,21 +122,23 @@ class Agent(AdvancedEncoderDecoder):
 			input=tf.constant([self.vocab.index("<eos>")], dtype=tf.int32),
 			multiples=[self.batch_size])
 
-		inference_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+		decoder_initial_state = tf.contrib.seq2seq.tile_batch(self.encoder_final_state, multiplier=self.beam_width)
+		# decoder_initial_state = self.decoder_cell.zero_state(self.batch_size * self.beam_width, tf.float32).clone(cell_state=self.encoder_final_state)
+
+		inference_decoder = tf.contrib.seq2seq.BeamSearchDecoder(
+			cell=self.decoder_cell,
 			embedding=self.embedding_space,
 			start_tokens=start_tokens,
-			end_token=self.vocab.index("<END>"))
-
-		inference_decoder = tf.contrib.seq2seq.BasicDecoder(
-			cell=self.decoder_cell,
-			helper=inference_helper,
-			initial_state=self.encoder_final_state,
-			output_layer=self.output_layer)
+			end_token=self.vocab.index("<END>"),
+			initial_state=decoder_initial_state,
+			beam_width=self.beam_width,
+			output_layer=self.output_layer,
+			length_penalty_weight=0.0)
 
 		inference_decoder_output = tf.contrib.seq2seq.dynamic_decode(
 			inference_decoder,
-			impute_finished=True,
+			impute_finished=False,
 			maximum_iterations=self.max_output_length)[0]
 
-		self.inference_logits = inference_decoder_output.sample_id
+		self.inference_logits = inference_decoder_output.predicted_ids[:,:,0]
 		self.inference_logits = tf.identity(self.inference_logits, name="inference_logits")
