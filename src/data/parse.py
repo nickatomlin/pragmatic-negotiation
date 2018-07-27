@@ -135,9 +135,7 @@ class FBParser(Parser):
 	"""
 	def create_training_examples(self, line):
 		"""
-		Creates multiple training examples from a single line of raw data.
-
-		Returns a string.
+		Predict full dialogue given inputs.
 		"""
 		input_list = self.get_inputs(self.get_tag(line, "input"))
 		dialogue_string = self.get_tag(line, "dialogue")
@@ -145,6 +143,22 @@ class FBParser(Parser):
 		partner_input = self.get_inputs(self.get_tag(line, "partner_input"))
 
 		return [{'input': input_list,'output': [dialogue_string, output, partner_input]}]
+
+
+class SentenceParser(Parser):
+	"""
+	For use with hierarchical dialogue model (LIDM), as described in "Hierarchical Text
+	Generation and Planning for Strategic Dialogue."
+
+
+	"""
+	def create_training_examples(self, line):
+		
+		input_list = self.get_inputs(self.get_tag(line, "input"))
+		dialogue_string = self.get_tag(line, "dialogue")
+
+		utterances = dialogue_string.split("<eos>")
+		return [utterances]
 
 
 class RSAParser(Parser):
