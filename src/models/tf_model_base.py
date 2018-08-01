@@ -30,7 +30,7 @@ class TfModelBase(object):
 		Tracks loss from each iteration during training.
 	"""
 	def __init__(self, hidden_dim=50, hidden_activation=tf.nn.tanh,
-			batch_size=1028, max_iter=100, eta=0.01, tol=1e-4, display_progress=1):
+			batch_size=1024, max_iter=100, eta=0.01, tol=1e-4, display_progress=1):
 		self.hidden_dim = hidden_dim
 		self.hidden_activation = hidden_activation
 		self.batch_size = batch_size
