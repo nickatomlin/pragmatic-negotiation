@@ -193,11 +193,11 @@ class HierarchicalAgent(Agent):
 	def train_dict(self, X, y):
 		decoder_inputs = [["<START> " + sent for sent in dialogue] for dialogue in y]
 		decoder_targets = [[sent + " <END>" for sent in dialogue] for dialogue in y]
-		
+
 		encoder_inputs, encoder_lengths = self.prepare_data(X)
-		decoder_inputs, _ = self.prepare_data(y)
+		decoder_inputs, _ = self.prepare_data(decoder_inputs)
 		decoder_targets, decoder_lengths = self.prepare_data(decoder_targets)
-		
+
 		return {self.encoder_inputs: encoder_inputs,
 			self.decoder_inputs: decoder_inputs,
 			self.decoder_targets: decoder_targets,
@@ -221,12 +221,13 @@ class HierarchicalAgent(Agent):
 				max_num_turns = num_turns
 			for turn in range(min(num_turns, self.max_turns)):
 				ex_lengths[turn][batch] = self.max_input_length
-				vals = data[batch][turn][-max_length: ].split()
+				vals = data[batch][turn].split()[-max_length: ]
+				print(vals)
 				vals = [index.get(w, unk_index) for w in vals]
 				temp = np.zeros((max_length,), dtype='int')
 				temp[0: len(vals)] = vals
 				new_data[turn][batch] = temp
-			
+		
 		return new_data, ex_lengths
 	
 
@@ -284,10 +285,11 @@ def simple_example(num_examples=1024, test_size=4):
 	agent = HierarchicalAgent(vocab=vocab,
 			  max_iter=100,
 			  eta=0.1,
-			  max_input_length=20,
-			  max_output_length=20,
+			  max_input_length=22,
+			  max_output_length=22,
 			  hidden_dim=64,
-			  max_turns=3)
+			  max_turns=3,
+			  batch_size=16)
 
 	data = []
 	for i in range(num_examples):
@@ -308,6 +310,7 @@ def simple_example(num_examples=1024, test_size=4):
 	predictions = []
 	for turn in logits:
 		predictions.append(agent.output(turn))
+	print(predictions)
 
 if __name__ == '__main__':
 	simple_example()
