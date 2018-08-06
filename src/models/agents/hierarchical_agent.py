@@ -221,8 +221,9 @@ class HierarchicalAgent(Agent):
 				max_num_turns = num_turns
 			for turn in range(min(num_turns, self.max_turns)):
 				ex_lengths[turn][batch] = self.max_input_length
+				# ex_len = min([len(data[batch][turn].split()), self.max_input_length])
+				# ex_lengths[turn][batch] = ex_len
 				vals = data[batch][turn].split()[-max_length: ]
-				print(vals)
 				vals = [index.get(w, unk_index) for w in vals]
 				temp = np.zeros((max_length,), dtype='int')
 				temp[0: len(vals)] = vals
@@ -285,16 +286,16 @@ def simple_example(num_examples=1024, test_size=4):
 	agent = HierarchicalAgent(vocab=vocab,
 			  max_iter=100,
 			  eta=0.1,
-			  max_input_length=22,
-			  max_output_length=22,
+			  max_input_length=12,
+			  max_output_length=12,
 			  hidden_dim=64,
 			  max_turns=3,
 			  batch_size=16)
 
 	data = []
 	for i in range(num_examples):
-		first_string = get_random_string(random.randint(1,10))
-		second_string = get_random_string(random.randint(1,10))
+		first_string = get_random_string(random.randint(1,5))
+		second_string = get_random_string(random.randint(1,5))
 		third_string = first_string + second_string
 
 		encoder_input = ["", first_string, second_string]
@@ -304,6 +305,7 @@ def simple_example(num_examples=1024, test_size=4):
 	train_data, test_data = train_test_split(data, test_size=test_size)
 	X, y = zip(*train_data)
 	X_test, _ = zip(*test_data)
+	print(X_test)
 	agent.fit(X, y, save_path="../../../models/example")
 	logits = agent.predict(X_test)
 	
