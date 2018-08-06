@@ -58,11 +58,10 @@ class Agent(AdvancedEncoderDecoder):
 		for i in range(1, self.max_iter+1):
 			loss = 0
 			for X_batch, y_batch in self.batch_iterator(X, y):
-				if (len(X_batch) == 1024):
-					_, batch_loss = self.sess.run(
-						[self.optimizer, self.cost],
-						feed_dict=self.train_dict(X_batch, y_batch))
-					loss += batch_loss
+				_, batch_loss = self.sess.run(
+					[self.optimizer, self.cost],
+					feed_dict=self.train_dict(X_batch, y_batch))
+				loss += batch_loss
 			self.errors.append(loss)
 			if X_dev is not None and i > 0 and i % dev_iter == 0:
 				self.dev_predictions.append(self.predict(X_dev))
