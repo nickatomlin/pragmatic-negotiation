@@ -4,6 +4,7 @@ import tensorflow as tf
 import warnings
 import random
 import json
+from sklearn.model_selection import train_test_split
 from tensorflow.python.layers.core import Dense
 
 import sys
@@ -245,6 +246,57 @@ class HierarchicalAgent(Agent):
 			targets=decoder_targets,
 			weights=masks)
 		return cost
+
+	def predict(self, X):
+		pass
+
+
+def get_random_string(length):
+	"""
+	Get a random "ab"-string with number of characters equal to "length"
+	 - String of form "ababaaab"
+	"""
+	string = ""
+	for idx in range(length):
+		if (random.random() > 0.5):
+			string += "a"
+		else:
+			string += "b"
+	return string
+
+def simple_example(num_examples=1024, test_size=4):
+	"""
+	Concat operation:
+	 - All dialogues length three
+	 - Concatenate first two messages into the third message
+
+	E.g., ["ab", "bba", "abbba"]
+	"""
+	vocab = ['<PAD>', '$UNK', '<START>', '<END>', 'a', 'b']
+
+	agent = HierarchicalAgent(vocab=vocab,
+			  max_iter=50,
+			  eta=0.1,
+			  max_input_length=20,
+			  max_output_length=20,
+			  hidden_dim=64,
+			  max_turns=3)
+
+	data = []
+	for i in range(num_examples):
+		first_string = get_random_string(random.randint(1,10))
+		second_string = get_random_string(random.randint(1,10))
+		third_string = first_string + second_string
+
+		encoder_input = ["", first_string, second_string]
+		decoder_input = [first_string, second_string, third_string]
+		data.append((encoder_input, decoder_input))
+
+	train_data, test_data = train_test_split(data, test_size=test_size)
+	X, y = zip(*train_data)
+	agent.fit(X, y, save_path="../../../models/example")
+
+
 
 
 if __name__ == '__main__':

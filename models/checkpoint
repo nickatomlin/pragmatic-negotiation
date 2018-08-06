@@ -1,2 +1,2 @@
-model_checkpoint_path: "seq2seqAdvanced300b"
-all_model_checkpoint_paths: "seq2seqAdvanced300b"
+model_checkpoint_path: "example"
+all_model_checkpoint_paths: "example"
