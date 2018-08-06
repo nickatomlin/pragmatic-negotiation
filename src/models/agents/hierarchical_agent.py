@@ -248,7 +248,14 @@ class HierarchicalAgent(Agent):
 		return cost
 
 	def predict(self, X):
-		pass
+		X, x_lengths = self.prepare_data(X)
+
+		graph = tf.get_default_graph()
+		answer_logits = self.sess.run(self.inference_logits, {
+			self.encoder_inputs: X, 
+			self.encoder_lengths: x_lengths})
+
+		return answer_logits
 
 
 def get_random_string(length):
@@ -259,9 +266,9 @@ def get_random_string(length):
 	string = ""
 	for idx in range(length):
 		if (random.random() > 0.5):
-			string += "a"
+			string += "a "
 		else:
-			string += "b"
+			string += "b "
 	return string
 
 def simple_example(num_examples=1024, test_size=4):
@@ -275,7 +282,7 @@ def simple_example(num_examples=1024, test_size=4):
 	vocab = ['<PAD>', '$UNK', '<START>', '<END>', 'a', 'b']
 
 	agent = HierarchicalAgent(vocab=vocab,
-			  max_iter=50,
+			  max_iter=100,
 			  eta=0.1,
 			  max_input_length=20,
 			  max_output_length=20,
@@ -294,10 +301,13 @@ def simple_example(num_examples=1024, test_size=4):
 
 	train_data, test_data = train_test_split(data, test_size=test_size)
 	X, y = zip(*train_data)
+	X_test, _ = zip(*test_data)
 	agent.fit(X, y, save_path="../../../models/example")
-
-
-
+	logits = agent.predict(X_test)
+	
+	predictions = []
+	for turn in logits:
+		predictions.append(agent.output(turn))
 
 if __name__ == '__main__':
 	simple_example()
