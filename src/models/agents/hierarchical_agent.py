@@ -214,11 +214,8 @@ class HierarchicalAgent(Agent):
 		
 		new_data = np.zeros((self.max_turns, batch_size, max_length), dtype='int')
 		ex_lengths = np.zeros((self.max_turns, batch_size))
-		max_num_turns = 0
 		for batch in range(len(data)):
 			num_turns = len(data[batch])
-			if num_turns > max_num_turns:
-				max_num_turns = num_turns
 			for turn in range(min(num_turns, self.max_turns)):
 				ex_lengths[turn][batch] = self.max_input_length
 				# ex_len = min([len(data[batch][turn].split()), self.max_input_length])
