@@ -145,7 +145,7 @@ class HierarchicalAgent(Agent):
 
 	def decoding_inference(self):
 		ta = tf.TensorArray(dtype=tf.int32, size=self.max_turns)
-		
+
 		_, inference_logits = tf.while_loop(
 			cond=lambda i,t: i < self.max_turns,
 			body=self.decoding_inference_step,
@@ -153,7 +153,7 @@ class HierarchicalAgent(Agent):
 		
 		self.inference_logits = inference_logits.stack()
 		self.inference_logits = tf.identity(self.inference_logits, name="inference_logits")
-	
+
 
 	def decoding_inference_step(self, i, ta):
 		context_state = tf.gather(self.context_outputs, i)
@@ -260,6 +260,12 @@ class HierarchicalAgent(Agent):
 		return answer_logits
 
 
+"""
+Toy examples
+ - Concat operation ["a", "b"] -> "ab"
+ - Translate operation ["ab"] -> "ba"
+"""
+
 def get_random_string(length):
 	"""
 	Get a random "ab"-string with number of characters equal to "length"
@@ -273,7 +279,20 @@ def get_random_string(length):
 			string += "b "
 	return string
 
-def simple_example(num_examples=1024, test_size=4):
+def flip_string(string):
+	"""
+	Given an "ab"-string, reverse the "a"s and "b"s
+	 - E.g., "abb" -> "baa"
+	"""
+	new_string = ""
+	for idx in range(len(string)):
+		if (string[idx] == "a"):
+			new_string += "b "
+		elif (string[idx] == "b"):
+			new_string += "a "
+	return new_string
+
+def concat_example(num_examples=32768, test_size=4):
 	"""
 	Concat operation:
 	 - All dialogues length three
@@ -290,7 +309,7 @@ def simple_example(num_examples=1024, test_size=4):
 			  max_output_length=12,
 			  hidden_dim=64,
 			  max_turns=3,
-			  batch_size=16)
+			  batch_size=1024)
 
 	data = []
 	for i in range(num_examples):
@@ -304,15 +323,55 @@ def simple_example(num_examples=1024, test_size=4):
 
 	train_data, test_data = train_test_split(data, test_size=test_size)
 	X, y = zip(*train_data)
-	X_test, _ = zip(*test_data)
-	print(X_test)
-	agent.fit(X, y, save_path="../../../models/example")
+	X_test, y_test = zip(*test_data)
+	print("Test data: {}".format(y_test))
+	agent.fit(X, y, save_path="../../../models/concat_example")
 	logits = agent.predict(X_test)
 	
 	predictions = []
 	for turn in logits:
-		predictions.append(agent.output(turn))
-	print(predictions)
+		predictions.append(agent.output(turn)[:test_size])
+	print(np.transpose(predictions))
+
+
+def translate_example(num_examples=100, test_size=4):
+	"""
+	Translate operation:
+	 - All dialogues length two
+	 - Swap "a"s with "b"s and vice-versa
+
+	E.g., ["abbba", "baaab"]
+	"""
+	vocab = ['<PAD>', '$UNK', '<START>', '<END>', 'a', 'b']
+
+	agent = HierarchicalAgent(vocab=vocab,
+			  max_iter=300,
+			  eta=0.1,
+			  max_input_length=6,
+			  max_output_length=6,
+			  hidden_dim=64,
+			  max_turns=2)
+
+	data = []
+	for i in range(num_examples):
+		first_string = get_random_string(random.randint(1,5))
+		second_string = flip_string(first_string)
+
+		encoder_input = ["", first_string]
+		decoder_input = [first_string, second_string]
+		data.append((encoder_input, decoder_input))
+
+	train_data, test_data = train_test_split(data, test_size=test_size)
+	X, y = zip(*train_data)
+	X_test, y_test = zip(*test_data)
+	print("Test data: {}".format(y_test))
+	agent.fit(X, y, save_path="../../../models/translate_example")
+	logits = agent.predict(X_test)
+	
+	predictions = []
+	for turn in logits:
+		predictions.append(agent.output(turn)[:test_size])
+	print(np.transpose(predictions))
 
 if __name__ == '__main__':
-	simple_example()
+	translate_example()

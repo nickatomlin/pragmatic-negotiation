@@ -1,2 +1,2 @@
-model_checkpoint_path: "example"
-all_model_checkpoint_paths: "example"
+model_checkpoint_path: "translate_example"
+all_model_checkpoint_paths: "translate_example"
