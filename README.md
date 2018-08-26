@@ -12,8 +12,12 @@ Sequence model code based on [Stanford CS224U](https://github.com/cgpotts/cs224u
 ```
 .
 ├── data        			
+│   ├── action         # agreement space only
+│   ├── clusters       # cluster assignments 
+│   ├── full           # agreement space and goal vector
 │   ├── processed
-│   └── raw
+│   ├── raw
+│   └── tmp
 ├── models             # saved Tensorflow models  
 ├── notebooks
 ├── reports
