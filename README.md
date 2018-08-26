@@ -5,7 +5,7 @@ Project based on Facebook Research's [Deal or no deal?](https://code.fb.com/appl
 for a multi-issue bargaining task. This code uses pragmatic reasoning based on the rational speech acts
 (RSA) model to infer information about the opponent while bargaining.
 
-Sequence model code based on [Stanford CS224U](https://github.com/cgpotts/cs224u).
+Written in Dynet. Tensorflow code available in [branch](https://github.com/Designist/Negotiation/tree/tensorflow).
 
 ## Directory structure
 
