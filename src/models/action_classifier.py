@@ -4,7 +4,7 @@ import random
 import json
 from sklearn.model_selection import train_test_split
 import dynet as dy
-from parser import ActionClassifierParser
+from src.data.parser import ActionClassifierParser
 
 class ActionClassifier:
 	def __init__(self, vocab, hidden_dim=256, minibatch=16, num_epochs=15, num_layers=1):

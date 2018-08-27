@@ -4,8 +4,8 @@ import random
 import json
 from sklearn.model_selection import train_test_split
 import dynet as dy
-from parser import SentenceParser
-from agent import Agent
+from src.data.parser import SentenceParser
+from src.models.agent import Agent
 
 class BaselineAgent(Agent):
 	"""

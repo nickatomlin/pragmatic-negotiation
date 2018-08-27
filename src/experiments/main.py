@@ -10,12 +10,12 @@ import random
 import json
 from sklearn.model_selection import train_test_split
 import dynet as dy
-from parser import SentenceParser
-from parser import BaselineParser
-from parser import ActionClassifierParser
-from agent import Agent
-from baseline_clusters import BaselineClusters
-from full_model import FullModel
+from src.data.parser import SentenceParser
+from src.data.parser import BaselineParser
+from src.data.parser import ActionClassifierParser
+from src.models.agent import Agent
+from src.models.baseline_clusters import BaselineClusters
+from src.models.full_model import FullModel
 
 """
 Negotiation data example:
@@ -24,8 +24,8 @@ Negotiation data example:
 def main():
 	# Initialize Agent and SentenceParser
 	parser = ActionClassifierParser(unk_threshold=20,
-				  input_directory="data/raw/",
-				  output_directory="data/full/")
+				  input_directory="../../data/raw/",
+				  output_directory="../../data/full/")
 	# parser.parse()
 	print("Vocab size: {}".format(parser.vocab_size))
 
@@ -34,7 +34,7 @@ def main():
 	# Training
 	train_data = []
 	clusters = []
-	with open("data/action/train.txt", "r") as train_file:
+	with open("../../data/action/train.txt", "r") as train_file:
 		for line in train_file:
 			train_example = json.loads(line)
 

@@ -4,9 +4,9 @@ import random
 import json
 from sklearn.model_selection import train_test_split
 import dynet as dy
-from parser import SentenceParser
-from baseline_agent import BaselineAgent
-from action_classifier import ActionClassifier
+from src.data.parser import SentenceParser
+from src.models.baseline_agent import BaselineAgent
+from src.models.action_classifier import ActionClassifier
 import time
 
 class BaselineClusters(BaselineAgent):
@@ -47,7 +47,7 @@ class BaselineClusters(BaselineAgent):
 		self.sentence_encoder = dy.LSTMBuilder(self.num_layers, self.hidden_dim, self.hidden_dim, self.params)
 		# TODO: Edit context encoder
 		self.context_encoder = dy.LSTMBuilder(self.num_layers, self.num_clusters, self.hidden_dim, self.params)
-		self.output_decoder = dy.LSTMBuilder(self.num_layers, 2*self.hidden_dim, self.hidden_dim, self.params)
+		self.output_decoder = dy.LSTMBuilder(self.num_layers, self.hidden_dim, self.hidden_dim, self.params)
 
 		self.R = self.params.add_parameters((self.vocab_size, self.hidden_dim))
 		self.b = self.params.add_parameters((self.vocab_size,))
@@ -116,8 +116,6 @@ class BaselineClusters(BaselineAgent):
 		b = dy.parameter(self.b)
 
 		decoder_input = [self.vocab.index("<START>")] + utterance
-
-		print(state[-1])
 
 		embedded_decoder_input = [self.embeddings[word] for word in decoder_input]
 		decoder_initial_state = self.output_decoder.initial_state(vecs=[state, state])
@@ -298,8 +296,8 @@ class BaselineClusters(BaselineAgent):
 				state = context_state.add_input(one_hot_z).h()[-1]
 				log_papx = dy.nobackprop(self.log_prob_papx(example, idx, state))
 				log_pz = dy.nobackprop(dy.log(dy.pick(pz, z)))
-				print("PZ: {}".format(log_pz.npvalue()))
-				print("PAPX: {}".format(log_papx.npvalue()))
+				# print("PZ: {}".format(log_pz.npvalue()))
+				# print("PAPX: {}".format(log_papx.npvalue()))
 				log_prob = dy.esum([log_papx, log_pz])
 				# print("PROB: {}".format(log_prob.npvalue()))
 				if log_prob.value() > max_prob.value():

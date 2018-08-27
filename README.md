@@ -25,6 +25,5 @@ Written in Dynet. Tensorflow code available in [branch](https://github.com/Desig
 │   ├── data           # data processing scripts
 │   ├── experiments
 │   └── models         # seq2seq and RNN models
-│     	└── agents     # derived model classes for negotiation
 └── ...
 ```
