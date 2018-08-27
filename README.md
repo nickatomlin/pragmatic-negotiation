@@ -37,6 +37,6 @@ To run on GPU machine:
 
     $ source activate dy3-ntomlin
     $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-9.0/lib64
-    $ nlprun -a dy-ntomlin -m jagupard18 -n clusters -p high -w /u/scr/ntomlin/Negotiation/ "PYTHONPATH=. python src/experiments/main.py --dynet-gpu --dynet-mem 12000"
+    $ nlprun -a dy3-ntomlin -m jagupard18 -n clusters -p high -w /u/scr/ntomlin/Negotiation/ "PYTHONPATH=. python src/experiments/main.py --dynet-gpu --dynet-mem 12000"
     
 Note that `--dynet-autobatch 1` turns on [automatic minibatching](https://dynet.readthedocs.io/en/latest/minibatch.html), and `--dynet-mem 12000` sets the memory consumption to 12GB. See [more command line options](https://dynet.readthedocs.io/en/latest/commandline.html).
