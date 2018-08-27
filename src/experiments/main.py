@@ -24,8 +24,8 @@ Negotiation data example:
 def main():
 	# Initialize Agent and SentenceParser
 	parser = ActionClassifierParser(unk_threshold=20,
-				  input_directory="../../data/raw/",
-				  output_directory="../../data/full/")
+				  input_directory="data/raw/",
+				  output_directory="data/full/")
 	# parser.parse()
 	print("Vocab size: {}".format(parser.vocab_size))
 
@@ -34,7 +34,7 @@ def main():
 	# Training
 	train_data = []
 	clusters = []
-	with open("../../data/action/train.txt", "r") as train_file:
+	with open("data/action/train.txt", "r") as train_file:
 		for line in train_file:
 			train_example = json.loads(line)
 
