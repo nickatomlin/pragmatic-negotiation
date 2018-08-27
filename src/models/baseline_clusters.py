@@ -357,8 +357,8 @@ class BaselineClusters(BaselineAgent):
 			batch_loss = []
 			loss_sum = 0
 			for idx in range(num_examples):
-				if (idx % 1000 == 0):
-					print("(Clusters) Epoch: {} | Example: {} | Loss sum: {}".format(epoch, idx, loss_sum))
+				# if (idx % 1000 == 0):
+					# print("(Clusters) Epoch: {} | Example: {} | Loss sum: {}".format(epoch, idx, loss_sum))
 				loss = self.train_example(examples[idx])
 				batch_loss.append(loss)
 
@@ -390,12 +390,12 @@ class BaselineClusters(BaselineAgent):
 			self.onehotzs.append(one_hot_z)
 
 
-		for epoch in range(50):
+		for epoch in range(10):
 			batch_loss = []
 			loss_sum = 0
 			for idx in range(num_examples):
-				if (idx % 100 == 0):
-					print("(EM) Epoch: {} | Example: {}".format(epoch, idx))
+				# if (idx % 100 == 0):
+				# 	print("(EM) Epoch: {} | Example: {}".format(epoch, idx))
 				if len(examples[idx][1][1]) == 3: # Agreement occurs
 					loss, z_list = self.em_example(examples[idx])
 					zs[idx] = z_list
@@ -420,13 +420,13 @@ class BaselineClusters(BaselineAgent):
 						self.onehotzs.append(one_hot_z)
 					self.back_time += (time.time() - back_time)
 			print("(EM) Epoch: {} | Loss: {}".format(epoch+1, loss_sum))
-		print("EM time: {}".format(time.time() - em_time))
-		print("E time: {}".format(self.e_time))
-		print("M time: {}".format(self.m_time))
-		print("Backprop time: {}".format(self.back_time))
-		print("PAPX time: {}".format(self.papx_time))
-		print("PA time: {}".format(self.pa_time))
-		print("PX time: {}".format(self.px_time))
+		# print("EM time: {}".format(time.time() - em_time))
+		# print("E time: {}".format(self.e_time))
+		# print("M time: {}".format(self.m_time))
+		# print("Backprop time: {}".format(self.back_time))
+		# print("PAPX time: {}".format(self.papx_time))
+		# print("PA time: {}".format(self.pa_time))
+		# print("PX time: {}".format(self.px_time))
 		# Print zs to file:
 		with open("data/clusters/clusters.txt", 'w') as f:
 			for idx in range(num_examples):
