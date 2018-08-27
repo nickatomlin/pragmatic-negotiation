@@ -34,6 +34,7 @@ To run clustering locally:
     $ python src/experiments/main.py --dynet-autobatch 1
     
 To run on GPU machine:
+
     $ nlprun -a dy-ntomlin -m jagupard18 -n clusters -p high -w /u/scr/ntomlin/Negotiation/ "PYTHONPATH=. python src/experiments/main.py --dynet-gpu --dynet-mem 12000"
     
-Note that `--dynet-autobatch 1` turns on [automatic minibatching](https://dynet.readthedocs.io/en/latest/minibatch.html), and `--dynet-mem 12000` sets the memory consumption to 12GB. See more [command line options](https://dynet.readthedocs.io/en/latest/commandline.html).
+Note that `--dynet-autobatch 1` turns on [automatic minibatching](https://dynet.readthedocs.io/en/latest/minibatch.html), and `--dynet-mem 12000` sets the memory consumption to 12GB. See [more command line options](https://dynet.readthedocs.io/en/latest/commandline.html).
