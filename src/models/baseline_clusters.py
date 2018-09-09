@@ -47,7 +47,7 @@ class BaselineClusters(BaselineAgent):
 		self.sentence_encoder = dy.LSTMBuilder(self.num_layers, self.hidden_dim, self.hidden_dim, self.params)
 		# TODO: Edit context encoder
 		self.context_encoder = dy.LSTMBuilder(self.num_layers, self.num_clusters, self.hidden_dim, self.params)
-		self.output_decoder = dy.LSTMBuilder(self.num_layers, self.hidden_dim, self.hidden_dim, self.params)
+		self.output_decoder = dy.LSTMBuilder(self.num_layers, 2*self.hidden_dim, self.hidden_dim, self.params)
 
 		self.R = self.params.add_parameters((self.vocab_size, self.hidden_dim))
 		self.b = self.params.add_parameters((self.vocab_size,))
@@ -117,8 +117,8 @@ class BaselineClusters(BaselineAgent):
 
 		decoder_input = [self.vocab.index("<START>")] + utterance
 
-		embedded_decoder_input = [self.embeddings[word] for word in decoder_input]
-		decoder_initial_state = self.output_decoder.initial_state(vecs=[state, state])
+		embedded_decoder_input = [dy.concatenate([self.embeddings[word], state]) for word in decoder_input]
+		decoder_initial_state = self.output_decoder.initial_state()
 		decoder_output = decoder_initial_state.transduce(embedded_decoder_input)
 		log_probs_char = [ dy.affine_transform([b, R, h_t]) for h_t in decoder_output ]
 		
