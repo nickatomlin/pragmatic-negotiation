@@ -22,7 +22,7 @@ class BaselineClusters(BaselineAgent):
 	temp : int
 		Temperature parameter tau for Gumbel-softmax
 	"""
-	def __init__(self, num_clusters=50, temp=1, **kwargs):
+	def __init__(self, num_clusters=50, temp=0.01, **kwargs):
 		self.num_clusters = num_clusters
 		self.temp = temp
 		super(BaselineClusters, self).__init__(**kwargs)
@@ -76,22 +76,25 @@ class BaselineClusters(BaselineAgent):
 		W = dy.parameter(self.W)
 		prob = dy.softmax(W * eq)
 		gumbel = dy.random_gumbel(self.num_clusters)
-		y = []
-		denom = []
-		for z in range(self.num_clusters):
-			pi_i = prob[z]
-			g_i = gumbel[z]
-			val = dy.exp((dy.log(pi_i)+g_i)/self.temp)
-			denom.append(val)
-		denom = dy.esum(denom)
+		# y = []
+		# denom = []
+		# for z in range(self.num_clusters):
+		# 	pi_i = prob[z]
+		# 	g_i = gumbel[z]
+		# 	val = dy.exp((dy.log(pi_i)+g_i)/self.temp)
+		# 	denom.append(val)
+		# denom = dy.esum(denom)
 
-		for z in range(self.num_clusters):
-			pi_i = prob[z]
-			g_i = gumbel[z]
-			numerator = dy.exp((dy.log(pi_i)+g_i)/self.temp)
-			y.append(dy.cdiv(numerator, denom))
+		# for z in range(self.num_clusters):
+		# 	pi_i = prob[z]
+		# 	g_i = gumbel[z]
+		# 	numerator = dy.exp((dy.log(pi_i)+g_i)/self.temp)
+		# 	y.append(dy.cdiv(numerator, denom))
 
-		logits = dy.concatenate(y)
+		logits = dy.softmax(dy.cdiv(dy.esum([prob, gumbel]), dy.inputVector([self.temp])))
+
+		# logits = dy.concatenate(y)
+		# print(np.max(logits.npvalue()))
 		return logits
 
 
